@@ -58,7 +58,7 @@ function section(title: string, ...body: Node[]) {
   const wrap = el("section");
   wrap.style.cssText = "margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--line);";
   const h = el("h2", {}, title);
-  h.style.cssText = "font-size:10px;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:#475569;margin:0 0 12px;";
+  h.style.cssText = "font-size:10px;font-weight:650;letter-spacing:.14em;text-transform:uppercase;color:var(--heading);margin:0 0 12px;";
   wrap.append(h, ...body);
   return wrap;
 }
@@ -97,7 +97,7 @@ export function mountPanel(root: HTMLElement, store: Store) {
   const colorToggle = el("button", { type: "button" });
   colorToggle.setAttribute("aria-expanded", "false");
   colorToggle.setAttribute("aria-controls", "custom-color-picker");
-  colorToggle.style.cssText = "width:100%;display:flex;align-items:center;gap:11px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;color:var(--text);cursor:pointer;text-align:left;font:inherit;";
+  colorToggle.style.cssText = "width:100%;display:flex;align-items:center;gap:11px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);cursor:pointer;text-align:left;font:inherit;";
   const colorPreview = el("span");
   colorPreview.style.cssText = "width:28px;height:28px;flex:none;border:1px solid rgba(15,23,42,.14);border-radius:8px;background:#ff0000;";
   const toggleText = el("span");
@@ -114,7 +114,7 @@ export function mountPanel(root: HTMLElement, store: Store) {
   const popover = el("div");
   popover.id = "custom-color-picker";
   popover.hidden = true;
-  popover.style.cssText = "position:absolute;z-index:5;top:calc(100% + 7px);left:0;right:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(15,23,42,.16);";
+  popover.style.cssText = "position:absolute;z-index:5;top:calc(100% + 7px);left:0;right:0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:0 14px 34px rgba(0,0,0,.3);";
   const well = el("div", { role: "slider", tabIndex: 0 });
   well.setAttribute("aria-label", "Saturación y brillo del color");
   well.setAttribute("aria-valuemin", "0");
@@ -134,7 +134,7 @@ export function mountPanel(root: HTMLElement, store: Store) {
   hexLabel.style.cssText = "color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.08em;";
   const hexInput = el("input", { type: "text", value: "#FF0000", maxLength: 7, spellcheck: false });
   hexInput.setAttribute("aria-label", "Código hexadecimal del color");
-  hexInput.style.cssText = "min-width:0;flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#f8fafc;color:var(--text);font:600 12px ui-monospace,monospace;letter-spacing:.04em;";
+  hexInput.style.cssText = "min-width:0;flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font:600 12px ui-monospace,monospace;letter-spacing:.04em;";
   const closePicker = el("button", { type: "button" }, "Listo");
   closePicker.style.cssText = "padding:8px 12px;border:0;border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;font:600 12px system-ui,sans-serif;";
   hexRow.append(hexLabel, hexInput, closePicker);
@@ -208,14 +208,14 @@ export function mountPanel(root: HTMLElement, store: Store) {
 
   const reset = el("button", { type: "button" }, "Restablecer calibración");
   reset.style.cssText =
-    "padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#f8fafc;color:var(--text);cursor:pointer;font:inherit;font-size:12px;";
+    "padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);cursor:pointer;font:inherit;font-size:12px;";
   reset.addEventListener("click", () => store.set({ ...NEUTRAL_CALIBRATION }));
 
   const hint = el("p", {}, "Ajusta mirando el micrófono real: la vista 3D muestra el color ya corregido, igual que el que recibe el micrófono.");
   hint.style.cssText = "color:var(--muted);margin:0 0 14px;font-size:12px;";
 
   const status = el("p", {}, "Comprobando el servicio local...");
-  status.style.cssText = "color:var(--muted);margin:0;font-size:12px;padding:11px 12px;border-radius:8px;background:#f8fafc;border:1px solid var(--line);";
+  status.style.cssText = "color:var(--muted);margin:0;font-size:12px;padding:11px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--line);";
 
   const title = el("h1", {}, "Configuración de audio");
   title.style.cssText = "font-size:19px;letter-spacing:-.03em;font-weight:650;margin:0 0 4px;";

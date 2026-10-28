@@ -1,9 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import * as THREE from "three";
+import type { Theme } from "../theme";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-export interface Stage { scene: THREE.Scene; start(): void; setExposure(value: number): void }
+export interface Stage {
+  scene: THREE.Scene;
+  start(): void;
+  setExposure(value: number): void;
+  setTheme(theme: Theme): void;
+}
+
+// Mismos tonos que --stage en index.html.
+const PALETTE: Record<Theme, { background: number; floor: number; platform: number; accent: number }> = {
+  light: { background: 0xf1f5f9, floor: 0xe8edf3, platform: 0xd9e0e9, accent: 0xa8b5c7 },
+  dark: { background: 0x161e30, floor: 0x1b2438, platform: 0x24304a, accent: 0x3b4863 },
+};
 
 export function createStage(container: HTMLElement): Stage {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -44,23 +56,17 @@ export function createStage(container: HTMLElement): Stage {
   rim.target.position.set(0, 1.5, 0);
   scene.add(rim, rim.target);
 
-  const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(18, 96),
-    new THREE.MeshStandardMaterial({ color: 0xe8edf3, metalness: 0.08, roughness: 0.84 }),
-  );
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xe8edf3, metalness: 0.08, roughness: 0.84 });
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(18, 96), floorMaterial);
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.01;
   scene.add(floor);
-  const platform = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.4, 1.55, 0.045, 96),
-    new THREE.MeshStandardMaterial({ color: 0xd9e0e9, metalness: 0.16, roughness: 0.58 }),
-  );
+  const platformMaterial = new THREE.MeshStandardMaterial({ color: 0xd9e0e9, metalness: 0.16, roughness: 0.58 });
+  const platform = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.55, 0.045, 96), platformMaterial);
   platform.position.y = -0.08;
   scene.add(platform);
-  const accent = new THREE.Mesh(
-    new THREE.TorusGeometry(1.43, 0.009, 6, 100),
-    new THREE.MeshBasicMaterial({ color: 0xa8b5c7, transparent: true, opacity: 0.75 }),
-  );
+  const accentMaterial = new THREE.MeshBasicMaterial({ color: 0xa8b5c7, transparent: true, opacity: 0.75 });
+  const accent = new THREE.Mesh(new THREE.TorusGeometry(1.43, 0.009, 6, 100), accentMaterial);
   accent.rotation.x = Math.PI / 2;
   accent.position.y = -0.055;
   scene.add(accent);
@@ -78,6 +84,14 @@ export function createStage(container: HTMLElement): Stage {
   return {
     scene,
     setExposure(value) { renderer.toneMappingExposure = value; },
+    setTheme(theme) {
+      const p = PALETTE[theme];
+      (scene.background as THREE.Color).setHex(p.background);
+      scene.fog!.color.setHex(p.background);
+      floorMaterial.color.setHex(p.floor);
+      platformMaterial.color.setHex(p.platform);
+      accentMaterial.color.setHex(p.accent);
+    },
     start() { renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); }); },
   };
 }

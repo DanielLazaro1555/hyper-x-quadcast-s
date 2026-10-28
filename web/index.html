@@ -13,37 +13,80 @@
         --text: #1e293b;
         --muted: #64748b;
         --accent: #dc2626;
+        --surface: #f8fafc;
+        --card: #ffffff;
+        --heading: #475569;
+        --stage: #f1f5f9;
+        --stage-fade: rgba(226,232,240,.42);
+        --caption: rgba(255,255,255,.88);
+        --chip-bg: #f1f5f9;
+        --chip-line: #e2e8f0;
+        --chip-text: #475569;
+        --dot: #94a3b8;
+        --btn-line: #cbd5e1;
+        --btn-bg: #ffffff;
+        --btn-text: #334155;
+        --btn-hover: #f1f5f9;
+        --ok-bg: #f0fdf4; --ok-line: #bbf7d0; --ok-text: #166534; --ok-dot: #22c55e;
+        --bad-bg: #fef2f2; --bad-line: #fecaca; --bad-text: #b91c1c; --bad-dot: #ef4444;
+        --shadow: rgba(15,23,42,.04);
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #0b1120;
+        --panel: #111827;
+        --line: #263042;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --accent: #ef4444;
+        --surface: #0f172a;
+        --card: #1a2233;
+        --heading: #cbd5e1;
+        --stage: #161e30;
+        --stage-fade: rgba(2,6,23,.45);
+        --caption: rgba(17,24,39,.82);
+        --chip-bg: #1a2233;
+        --chip-line: #2b364b;
+        --chip-text: #cbd5e1;
+        --dot: #64748b;
+        --btn-line: #334155;
+        --btn-bg: #1a2233;
+        --btn-text: #e2e8f0;
+        --btn-hover: #243049;
+        --ok-bg: #0f2a1d; --ok-line: #166534; --ok-text: #86efac; --ok-dot: #22c55e;
+        --bad-bg: #2d1416; --bad-line: #7f1d1d; --bad-text: #fca5a5; --bad-dot: #ef4444;
+        --shadow: rgba(0,0,0,.35);
       }
       * { box-sizing: border-box; }
       html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text);
         font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
       #app { display: grid; grid-template-columns: minmax(0, 1fr) 360px; height: 100dvh; min-height: 620px; }
-      #stage { position: relative; min-width: 0; overflow: hidden; background: #f1f5f9; }
+      #stage { position: relative; min-width: 0; overflow: hidden; background: var(--stage); }
       #stage canvas { display: block; width: 100%; height: 100%; }
       #stage::after { content: ""; position: absolute; inset: auto 0 0; height: 130px; pointer-events: none;
-        background: linear-gradient(transparent, rgba(226,232,240,.42)); }
+        background: linear-gradient(transparent, var(--stage-fade)); }
       .stage-caption { position:absolute; z-index:1; top:24px; left:24px; pointer-events:none;
-        padding:14px 18px; background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:12px;
-        box-shadow:0 4px 12px rgba(15,23,42,.04); }
+        padding:14px 18px; background:var(--caption); border:1px solid var(--line); border-radius:12px;
+        box-shadow:0 4px 12px var(--shadow); }
       .eyebrow { color:var(--muted); font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
       .stage-caption h2 { margin:4px 0 2px; font-size:18px; font-weight:650; letter-spacing:-.02em; }
       .stage-caption p { margin:0; color:var(--muted); font-size:11px; }
-      .stage-caption a { color:#475569; text-decoration:underline; text-underline-offset:2px; pointer-events:auto; }
+      .stage-caption a { color:var(--heading); text-decoration:underline; text-underline-offset:2px; pointer-events:auto; }
       .caption-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; max-width:340px; }
       .mute-status { display:inline-flex; align-items:center; gap:7px; padding:5px 9px;
-        border:1px solid #e2e8f0; border-radius:999px; background:#f1f5f9; color:#475569;
+        border:1px solid var(--chip-line); border-radius:999px; background:var(--chip-bg); color:var(--chip-text);
         font-size:11px; font-weight:600; }
-      .mute-status::before { content:""; width:7px; height:7px; border-radius:50%; background:#94a3b8; }
-      .mute-status[data-state="active"] { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
-      .mute-status[data-state="active"]::before { background:#22c55e; }
-      .mute-status[data-state="muted"] { border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
-      .mute-status[data-state="muted"]::before { background:#ef4444; }
-      .mute-toggle { padding:5px 11px; border:1px solid #cbd5e1; border-radius:999px;
-        background:#fff; color:#334155; font-size:11px; font-weight:600; cursor:pointer; pointer-events:auto; }
-      .mute-toggle:hover { background:#f1f5f9; }
+      .mute-status::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--dot); }
+      .mute-status[data-state="active"] { border-color:var(--ok-line); background:var(--ok-bg); color:var(--ok-text); }
+      .mute-status[data-state="active"]::before { background:var(--ok-dot); }
+      .mute-status[data-state="muted"] { border-color:var(--bad-line); background:var(--bad-bg); color:var(--bad-text); }
+      .mute-status[data-state="muted"]::before { background:var(--bad-dot); }
+      .mute-toggle { padding:5px 11px; border:1px solid var(--btn-line); border-radius:999px;
+        background:var(--btn-bg); color:var(--btn-text); font-size:11px; font-weight:600; cursor:pointer; pointer-events:auto; }
+      .mute-toggle:hover { background:var(--btn-hover); }
       .mute-toggle[disabled] { opacity:.5; cursor:default; }
       #panel { background: var(--panel); border-left: 1px solid var(--line); padding: 24px;
-        overflow-y: auto; box-shadow:-4px 0 15px rgba(0,0,0,.025); display:flex; flex-direction:column; gap:22px; }
+        overflow-y: auto; box-shadow:-4px 0 15px var(--shadow); display:flex; flex-direction:column; gap:22px; }
       #meter { padding-bottom:20px; border-bottom:1px solid var(--line); }
       #panel select, #panel button { font-family:inherit; }
       #panel button:focus-visible, #panel input:focus-visible, #panel select:focus-visible {
@@ -68,7 +111,7 @@
   <body>
     <div id="app">
       <div id="stage">
-        <div class="stage-caption"><div class="eyebrow">Estudio · Vista 3D</div><h2>HyperX QuadCast S</h2><p><a href="https://skfb.ly/o8rYZ" target="_blank" rel="noreferrer">“Microphone HyperX QuadCast S”</a> by Sterflycreator · <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a></p><p>Arrastra para girar</p><div class="caption-actions"><div id="mute-status" class="mute-status" data-state="unknown" role="status" aria-live="polite">Mute sin sincronizar</div><button id="audio-mute" class="mute-toggle" type="button" disabled>Silenciar audio</button><button id="variant" class="mute-toggle" type="button">Modelo</button></div></div>
+        <div class="stage-caption"><div class="eyebrow">Estudio · Vista 3D</div><h2>HyperX QuadCast S</h2><p><a href="https://skfb.ly/o8rYZ" target="_blank" rel="noreferrer">“Microphone HyperX QuadCast S”</a> by Sterflycreator · <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a></p><p>Arrastra para girar</p><div class="caption-actions"><div id="mute-status" class="mute-status" data-state="unknown" role="status" aria-live="polite">Mute sin sincronizar</div><button id="audio-mute" class="mute-toggle" type="button" disabled>Silenciar audio</button><button id="variant" class="mute-toggle" type="button">Modelo</button><button id="theme" class="mute-toggle" type="button">Tema</button></div></div>
       </div>
       <aside id="panel">
         <div id="meter"></div>

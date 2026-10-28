@@ -89,7 +89,7 @@ export function mountMeter(root: HTMLElement, onAudioLevel: (level: number, acti
   title.style.cssText = "font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;";
 
   const select = document.createElement("select");
-  select.style.cssText = "width:100%;margin-bottom:8px;padding:8px;background:#fff;color:var(--text);border:1px solid var(--line);border-radius:8px;font:inherit;font-size:12px;";
+  select.style.cssText = "width:100%;margin-bottom:8px;padding:8px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;font:inherit;font-size:12px;";
   select.hidden = true;
 
   const button = document.createElement("button");
@@ -179,8 +179,8 @@ export function mountMeter(root: HTMLElement, onAudioLevel: (level: number, acti
       handle = await startMeter(deviceId, onFrame);
       info.textContent = describeInfo(handle.info);
       button.textContent = "Apagar audio";
-      button.style.background = "#dcfce7";
-      button.style.color = "#166534";
+      button.style.background = "var(--ok-bg)";
+      button.style.color = "var(--ok-text)";
       visualizations.hidden = false;
     } catch (e) {
       info.textContent = describeError(e);

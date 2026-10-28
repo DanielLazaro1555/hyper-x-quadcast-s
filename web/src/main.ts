@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { createStage } from "./scene/stage";
 import { applyBrightness, correctColor, createStore, loadCalibration, saveCalibration, uncorrectColor } from "./state";
+import { theme } from "./theme";
 import { mountMeter } from "./ui/meter";
 import { mountPanel } from "./ui/panel";
 
@@ -60,13 +61,13 @@ const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; mu
   white: {
     label: "Blanco",
     parts: {
-      body: { color: 0xb9bec6, metalness: 0.15, roughness: 0.5 },
-      net: { color: 0xa4aab3, metalness: 0.45, roughness: 0.4 },
-      thread: { color: 0x8d949e, metalness: 0.15, roughness: 0.55 },
+      body: { color: 0xeeebe5, metalness: 0.05, roughness: 0.55 },
+      net: { color: 0xd2cec6, metalness: 0.4, roughness: 0.45 },
+      thread: { color: 0xc9c5bd, metalness: 0.05, roughness: 0.6 },
       foam: FOAM,
     },
     muteOff: 0xc4c9d0,
-    exposure: 0.7,
+    exposure: 0.72,
   },
 };
 const VARIANT_KEY = "quadcast-s.variant";
@@ -305,6 +306,13 @@ variantButton.addEventListener("click", () => {
   renderVariantButton();
 });
 renderVariantButton();
+
+const themeButton = required<HTMLButtonElement>("theme");
+themeButton.addEventListener("click", () => theme.toggle());
+theme.subscribe((t) => {
+  stage.setTheme(t);
+  themeButton.textContent = t === "dark" ? "Modo claro" : "Modo oscuro";
+});
 
 const audioButton = required<HTMLButtonElement>("audio-mute");
 let audioMuted: boolean | null = null;
