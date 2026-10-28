@@ -117,6 +117,8 @@ let lastHardwareSync = 0;
 const importedGlow = new THREE.PointLight(0xffffff, 0, 4.2);
 importedGlow.position.set(0, 2.15, 0.15);
 stage.scene.add(importedGlow);
+// Cuánto blanco se mezcla en el núcleo del LED (0 = color puro, 1 = blanco).
+const HOT_WHITE = 0.2;
 function setImportedLight(rgb: [number, number, number]) {
   currentRgb = rgb;
   // El QuadCast apaga toda la iluminación de la cápsula mientras está muteado.
@@ -129,7 +131,11 @@ function setImportedLight(rgb: [number, number, number]) {
   if (ledGlow) ledGlow.visible = ledEnabled;
   importedLedMaterials.forEach((material) => {
     // Sin corrección tonal: así un rojo puro se ve rojo y no un durazno desaturado.
-    material.color.setRGB(ledEnabled ? r / 255 * level : 0, ledEnabled ? g / 255 * level : 0, ledEnabled ? b / 255 * level : 0);
+    // El núcleo de un LED encendido se acerca al blanco: se mezcla blanco en proporción al
+    // brillo para que los agujeros luzcan intensos, sin cambiar el matiz.
+    const hot = (c: number, peak: number) => (ledEnabled ? Math.min(1, (c / 255) * level + (peak / 255) * HOT_WHITE) : 0);
+    const peak = Math.max(r, g, b);
+    material.color.setRGB(hot(r, peak), hot(g, peak), hot(b, peak));
   });
   // La tapa del sensor táctil no se ilumina nunca: el estado se ve en la malla y en el
   // indicador de la página.
