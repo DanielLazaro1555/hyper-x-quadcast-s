@@ -27,7 +27,19 @@ Probado con un micrófono `0951:171f`, `bcdDevice 0x6103`, en Fedora 43. Otras r
 - Node.js y `npm`, solo para la interfaz web.
 - Permiso de acceso al dispositivo USB. En este equipo bastó el usuario normal, sin `sudo`.
 
-## Uso rápido: la interfaz web
+## Instalación (Linux)
+
+```
+./install.sh
+```
+
+Compila la web y el binario, instala `quadcast-s` en `~/.local/bin`, activa el servicio de usuario de systemd (arranca con la sesión), instala la regla udev (pide `sudo`) y deja la interfaz en <http://127.0.0.1:7878>. La web va incrustada en el binario: no hace falta Node ni Vite para usarla, solo para compilarla. El último color elegido se guarda en `~/.config/quadcast-s/state.json` y se aplica al arrancar el servicio.
+
+Para quitarlo: `./install.sh --uninstall`. Ver el estado del servicio: `systemctl --user status quadcast-s`.
+
+Windows y los paquetes `.deb`/`.rpm` todavía no existen: el mute por software usa ALSA y el acceso USB necesita otro driver en Windows.
+
+## Uso rápido: la interfaz web (desarrollo)
 
 Hacen falta dos procesos:
 

@@ -4,6 +4,8 @@ mod device;
 mod light;
 mod protocol;
 mod server;
+mod state;
+mod web;
 
 use std::process::ExitCode;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -20,7 +22,7 @@ uso: quadcast-s <comando>
   off [opciones]              apaga las luces (envía negro)
   watch                       muestra los eventos del sensor de silencio
   mute [on|off|toggle]        silencia o reactiva el audio (sin argumento, muestra el estado)
-  serve                       API local para la interfaz web (127.0.0.1:7878)
+  serve                       API local y interfaz web en http://127.0.0.1:7878
   info                        detecta el micrófono
 
 opciones de color y off:
@@ -101,6 +103,10 @@ fn run_watch() -> Result<(), String> {
 fn run_serve() -> Result<(), String> {
     let running = running_flag();
     let light = light::Light::spawn();
+    if let Some(saved) = state::load() {
+        light.set_ui(saved.ui);
+        light.set(saved.rgb);
+    }
     server::serve(&light, &running)
     // `light` se suelta aquí: el hilo termina y se devuelve `usbhid`.
 }

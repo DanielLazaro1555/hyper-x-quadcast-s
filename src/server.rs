@@ -17,11 +17,19 @@ use tiny_http::{Header, Method, Request, Response, Server};
 use crate::audio;
 use crate::light::{Light, UiColor};
 use crate::protocol;
+use crate::state;
+use crate::web;
 
 pub const PORT: u16 = 7878;
 
 const ALLOWED_HOSTS: [&str; 2] = ["127.0.0.1:7878", "localhost:7878"];
-const ALLOWED_ORIGINS: [&str; 2] = ["http://127.0.0.1:5173", "http://localhost:5173"];
+// 5173 es el servidor de desarrollo de Vite; 7878 es la web incrustada en el binario.
+const ALLOWED_ORIGINS: [&str; 4] = [
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+    "http://127.0.0.1:7878",
+    "http://localhost:7878",
+];
 const MAX_BODY: u64 = 1024;
 
 #[derive(Deserialize)]
@@ -145,6 +153,7 @@ fn handle(request: &mut Request, light: &Light) -> Reply {
             }
             match protocol::parse_hex_color(&req.color) {
                 Ok(rgb) => {
+                    let final_rgb = protocol::apply_brightness(rgb, req.brightness);
                     if !req.transient {
                         // Cualquier cambio queda registrado para que la web lo vea. Sin
                         // `ui_color` el color que llega es el ya corregido.
@@ -152,14 +161,23 @@ fn handle(request: &mut Request, light: &Light) -> Reply {
                             Some(color) => UiColor { color: color.to_string(), brightness: req.brightness, corrected: false },
                             None => UiColor { color: req.color.clone(), brightness: req.brightness, corrected: true },
                         };
-                        light.set_ui(ui);
+                        light.set_ui(ui.clone());
+                        state::save(&state::Saved { ui, rgb: final_rgb });
                     }
-                    light.set(protocol::apply_brightness(rgb, req.brightness));
+                    light.set(final_rgb);
                     reply(200, &status())
                 }
                 Err(msg) => error(400, &msg),
             }
         }
+        (Method::Get, url) if !url.starts_with("/api/") => match web::lookup(url) {
+            Some(asset) => {
+                let kind = Header::from_bytes(&b"Content-Type"[..], asset.content_type.as_bytes())
+                    .expect("tipo de contenido válido");
+                Response::from_data(asset.body.to_vec()).with_header(kind)
+            }
+            None => error(404, "no existe"),
+        },
         _ => error(404, "no existe"),
     }
 }

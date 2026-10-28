@@ -6,7 +6,7 @@ use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::audio;
 use crate::device::Mic;
@@ -16,7 +16,7 @@ const RETRY_INTERVAL: Duration = Duration::from_secs(1);
 
 /// Último color elegido en la web, sin corregir. El micrófono no permite leer su
 /// color, así que esto es lo que la web recupera al abrirse o recargarse.
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UiColor {
     pub color: String,
     pub brightness: u8,
