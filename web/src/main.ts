@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 import { getStatus, setLight, type DeviceStatus } from "./api";
 import { createMic } from "./scene/mic";
 import { createStage } from "./scene/stage";

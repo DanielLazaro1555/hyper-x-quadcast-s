@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /** Cliente del servicio local (`quadcast-s serve`). */
 
 export interface DeviceStatus {

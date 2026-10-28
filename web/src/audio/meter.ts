@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /**
  * Captura y análisis del audio del micrófono, todo en el navegador: nada se graba
  * ni se envía a ningún sitio. Se desactivan el procesado del navegador (eco, ruido,

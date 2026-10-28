@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 import { defineConfig } from "vite";
 
 // En desarrollo, la web habla con el servicio local a través de este proxy: así

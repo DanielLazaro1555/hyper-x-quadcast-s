@@ -3,7 +3,7 @@ name = "quadcast-s"
 version = "0.1.0"
 edition = "2021"
 description = "Control del HyperX QuadCast S en Linux (RGB y eventos de silencio)"
-license = "MIT"
+license = "GPL-2.0-or-later"
 
 [dependencies]
 rusb = "0.9"

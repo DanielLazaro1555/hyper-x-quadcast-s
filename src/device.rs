@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 //! Acceso USB al QuadCast S (`0951:171f`).
 
 use std::time::Duration;

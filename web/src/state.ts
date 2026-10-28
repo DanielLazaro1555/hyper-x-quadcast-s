@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /** Corrección para que los colores mezclados se vean bien en los LED reales. */
 export interface Calibration {
   /** Exponente aplicado a cada canal. 1 = sin corrección; ~2,2 compensa el gamma de pantalla. */

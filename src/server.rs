@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 //! API local para la interfaz web. Solo escucha en 127.0.0.1.
 //!
 //! Un servidor local que controla hardware es un blanco fácil si cualquier página

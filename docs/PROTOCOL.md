@@ -3,7 +3,7 @@
 Notas de ingeniería inversa del HyperX QuadCast S. Cada afirmación lleva una etiqueta:
 
 - **[verificado]**: observado en este equipo (captura `usbmon`, `lsusb` o prueba visual).
-- **[fuente]**: tomado del código de QuadcastRGB (`Ors1mer/QuadcastRGB` v1.0.5), no contrastado aquí.
+- **[fuente]**: tomado del código de QuadcastRGB (`Ors1mer/QuadcastRGB` v1.0.5, GPL-2.0), no contrastado aquí.
 - **[hipótesis]**: sin comprobar.
 
 ## Dispositivos

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 //! Hilo que mantiene el color: el micrófono necesita que se reenvíe en bucle.
 //! No abre el USB hasta la primera orden, para no quitarle `usbhid` sin necesidad.
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 //! Construcción de paquetes del QuadCast S. Ver `docs/PROTOCOL.md`.
 
 pub const PACKET_SIZE: usize = 64;
