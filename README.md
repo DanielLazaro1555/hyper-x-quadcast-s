@@ -96,7 +96,7 @@ El color se reenvía cada 55 ms, como hace QuadcastRGB. El brillo no es un coman
 
 | Ruta | Qué hace |
 |---|---|
-| `GET /api/status` | Estado: conectado, error y color actual |
+| `GET /api/status` | Estado: conectado, error, color y estado de mute conocido |
 | `POST /api/light` | Cuerpo JSON `{"color": "#rrggbb", "brightness": 0-100}` |
 
 Un servicio local que controla hardware es un blanco fácil si cualquier página del navegador puede hablarle. Por eso solo escucha en `127.0.0.1`, y además:
@@ -108,7 +108,7 @@ Un servicio local que controla hardware es un blanco fácil si cualquier página
 
 En desarrollo, Vite hace de proxy de `/api` hacia el servicio, así que el navegador solo ve un origen.
 
-El servicio no abre el USB hasta la primera orden, para no quitarle `usbhid` al micrófono sin necesidad.
+Al iniciar `serve`, el servicio abre el USB, consulta el estado actual del mute y escucha cambios del sensor físico. La web refleja el estado y apaga el RGB del visor mientras está muteado; RGB del dispositivo sigue sin enviarse hasta que cambies un control.
 
 ## Controlador del kernel
 

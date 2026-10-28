@@ -1,0 +1,5 @@
+/home/daniel/Documentos/Github/hyper-x-quadcast-s/README.md
+/home/daniel/Documentos/Github/hyper-x-quadcast-s/docs/ASSET-CREDITS.md
+/home/daniel/Documentos/Github/hyper-x-quadcast-s/docs/PROTOCOL.md
+/home/daniel/Documentos/Github/hyper-x-quadcast-s/web/index.html
+/home/daniel/Documentos/Github/hyper-x-quadcast-s/web/public/models/README.md

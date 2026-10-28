@@ -28,6 +28,14 @@ pub fn color_packet(rgb: [u8; 3]) -> Packet {
     p
 }
 
+/// Valor alternante del evento del sensor (`05 10 XX ...`), no estado absoluto.
+pub fn mute_event_value(report: &[u8]) -> Option<u8> {
+    match report {
+        [0x05, 0x10, state, ..] if *state <= 1 => Some(*state),
+        _ => None,
+    }
+}
+
 /// Atenúa un color como hace QuadcastRGB: cada canal por `percent / 100`, con
 /// división entera. El micrófono no tiene un comando de brillo propio.
 pub fn apply_brightness(rgb: [u8; 3], percent: u8) -> [u8; 3] {

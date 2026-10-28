@@ -15,6 +15,7 @@ const NOISE_WINDOW_MS = 10_000;
 const TEXT_EVERY_N_FRAMES = 6;
 const SPECTRUM_MIN_HZ = 20;
 const SPECTRUM_MAX_HZ = 20_000;
+const AUDIO_BUTTON_LABEL = "Encender audio";
 
 function css(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888";
@@ -82,23 +83,23 @@ function drawSpectrum(canvas: HTMLCanvasElement, reading: MeterReading) {
   g.stroke();
 }
 
-export function mountMeter(root: HTMLElement) {
+export function mountMeter(root: HTMLElement, onAudioLevel: (level: number, active: boolean) => void = () => {}) {
   const title = document.createElement("h2");
-  title.textContent = "Medidor de audio";
+  title.textContent = "Audio en vivo";
   title.style.cssText = "font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;";
 
   const select = document.createElement("select");
-  select.style.cssText = "width:100%;margin-bottom:8px;padding:6px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;";
+  select.style.cssText = "width:100%;margin-bottom:8px;padding:8px;background:#fff;color:var(--text);border:1px solid var(--line);border-radius:8px;font:inherit;font-size:12px;";
   select.hidden = true;
 
   const button = document.createElement("button");
   button.type = "button";
-  button.textContent = "Iniciar medidor";
-  button.style.cssText = "padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:none;color:var(--text);cursor:pointer;margin-bottom:10px;";
+  button.textContent = AUDIO_BUTTON_LABEL;
+  button.style.cssText = "padding:9px 14px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;cursor:pointer;margin-bottom:10px;font:inherit;font-size:13px;font-weight:600;";
 
   const info = document.createElement("p");
   info.style.cssText = "color:var(--muted);margin:0 0 10px;font-size:12px;";
-  info.textContent = "Mide el audio en tu navegador. No se graba ni se envía nada.";
+  info.textContent = "El nivel sincroniza el brillo LED del visor y del micrófono. El audio solo se mide; no se graba ni se transmite.";
 
   const level = document.createElement("canvas");
   level.style.cssText = "width:100%;height:14px;display:block;border-radius:3px;margin-bottom:6px;";
@@ -109,13 +110,17 @@ export function mountMeter(root: HTMLElement) {
   const axis = document.createElement("p");
   axis.style.cssText = "display:flex;justify-content:space-between;color:var(--muted);margin:4px 0 0;font-size:11px;";
   axis.append(...["20 Hz", "200 Hz", "2 kHz", "20 kHz"].map((t) => Object.assign(document.createElement("span"), { textContent: t })));
+  const visualizations = document.createElement("div");
+  visualizations.append(level, readout, spectrum, axis);
+  visualizations.hidden = true;
 
-  root.replaceChildren(title, button, select, info, level, readout, spectrum, axis);
+  root.replaceChildren(title, button, select, info, visualizations);
 
   let handle: MeterHandle | null = null;
   let history: { t: number; rms: number }[] = [];
   let frames = 0;
   let starting = false;
+  let smoothedLevel = 0;
 
   const describeInfo = (i: InputInfo) => {
     const flag = (v: boolean | undefined) => (v === undefined ? "?" : v ? "sí" : "no");
@@ -123,6 +128,9 @@ export function mountMeter(root: HTMLElement) {
   };
 
   const onFrame = (r: MeterReading) => {
+    const targetLevel = Math.max(0, Math.min(1, (r.rmsDb + 65) / 55));
+    smoothedLevel += (targetLevel - smoothedLevel) * (targetLevel > smoothedLevel ? 0.42 : 0.16);
+    onAudioLevel(smoothedLevel, true);
     const now = performance.now();
     history.push({ t: now, rms: r.rmsDb });
     history = history.filter((p) => now - p.t <= NOISE_WINDOW_MS);
@@ -140,13 +148,21 @@ export function mountMeter(root: HTMLElement) {
   const stop = () => {
     handle?.stop();
     handle = null;
-    button.textContent = "Iniciar medidor";
+    onAudioLevel(0, false);
+    button.textContent = AUDIO_BUTTON_LABEL;
+    button.style.background = "var(--accent)";
+    button.style.color = "#fff";
+    visualizations.hidden = true;
   };
 
   const start = async (deviceId?: string) => {
     if (starting) return;
     starting = true;
+    button.disabled = true;
+    button.textContent = "Activando…";
     stop();
+    button.disabled = true;
+    button.textContent = "Activando…";
     try {
       if (!deviceId) {
         await unlockLabels();
@@ -159,13 +175,19 @@ export function mountMeter(root: HTMLElement) {
         if (deviceId) select.value = deviceId;
       }
       history = [];
+      smoothedLevel = 0;
       handle = await startMeter(deviceId, onFrame);
       info.textContent = describeInfo(handle.info);
-      button.textContent = "Detener medidor";
+      button.textContent = "Apagar audio";
+      button.style.background = "#dcfce7";
+      button.style.color = "#166534";
+      visualizations.hidden = false;
     } catch (e) {
       info.textContent = describeError(e);
+      button.textContent = AUDIO_BUTTON_LABEL;
     } finally {
       starting = false;
+      button.disabled = false;
     }
   };
 

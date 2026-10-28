@@ -5,6 +5,7 @@ export interface DeviceStatus {
   connected: boolean;
   error: string | null;
   rgb: [number, number, number] | null;
+  muted: boolean | null;
 }
 
 async function parse(res: Response): Promise<DeviceStatus> {

@@ -6,34 +6,68 @@
     <title>QuadCast S</title>
     <style>
       :root {
-        color-scheme: dark;
-        --bg: #0e1014;
-        --panel: #171a21;
-        --line: #2a2f3a;
-        --text: #e6e9ef;
-        --muted: #8b93a3;
-        --accent: #6ea8ff;
+        color-scheme: light;
+        --bg: #f8fafc;
+        --panel: #ffffff;
+        --line: #e2e8f0;
+        --text: #1e293b;
+        --muted: #64748b;
+        --accent: #dc2626;
       }
       * { box-sizing: border-box; }
-      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
-        font: 14px/1.5 system-ui, sans-serif; }
-      #app { display: grid; grid-template-columns: 1fr 320px; height: 100%; }
-      #stage { position: relative; min-width: 0; }
+      html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text);
+        font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      #app { display: grid; grid-template-columns: minmax(0, 1fr) 360px; height: 100dvh; min-height: 620px; }
+      #stage { position: relative; min-width: 0; overflow: hidden; background: #f1f5f9; }
       #stage canvas { display: block; width: 100%; height: 100%; }
-      #panel { background: var(--panel); border-left: 1px solid var(--line); padding: 20px;
-        overflow-y: auto; }
-      @media (max-width: 720px) {
-        #app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-        #panel { border-left: 0; border-top: 1px solid var(--line); padding: 16px; }
+      #stage::after { content: ""; position: absolute; inset: auto 0 0; height: 130px; pointer-events: none;
+        background: linear-gradient(transparent, rgba(226,232,240,.42)); }
+      .stage-caption { position:absolute; z-index:1; top:24px; left:24px; pointer-events:none;
+        padding:14px 18px; background:rgba(255,255,255,.88); border:1px solid var(--line); border-radius:12px;
+        box-shadow:0 4px 12px rgba(15,23,42,.04); }
+      .eyebrow { color:var(--muted); font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
+      .stage-caption h2 { margin:4px 0 2px; font-size:18px; font-weight:650; letter-spacing:-.02em; }
+      .stage-caption p { margin:0; color:var(--muted); font-size:11px; }
+      .stage-caption a { color:#475569; text-decoration:underline; text-underline-offset:2px; pointer-events:auto; }
+      .mute-status { display:inline-flex; align-items:center; gap:7px; margin-top:10px; padding:5px 9px;
+        border:1px solid #e2e8f0; border-radius:999px; background:#f1f5f9; color:#475569;
+        font-size:11px; font-weight:600; }
+      .mute-status::before { content:""; width:7px; height:7px; border-radius:50%; background:#94a3b8; }
+      .mute-status[data-state="active"] { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+      .mute-status[data-state="active"]::before { background:#22c55e; }
+      .mute-status[data-state="muted"] { border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
+      .mute-status[data-state="muted"]::before { background:#ef4444; }
+      #panel { background: var(--panel); border-left: 1px solid var(--line); padding: 24px;
+        overflow-y: auto; box-shadow:-4px 0 15px rgba(0,0,0,.025); display:flex; flex-direction:column; gap:22px; }
+      #meter { padding-bottom:20px; border-bottom:1px solid var(--line); }
+      #panel select, #panel button { font-family:inherit; }
+      #panel button:focus-visible, #panel input:focus-visible, #panel select:focus-visible {
+        outline:3px solid rgba(220,38,38,.22); outline-offset:2px; }
+      #panel button { transition: background .15s ease, transform .15s ease, border-color .15s ease; }
+      #panel button:hover { transform: translateY(-1px); }
+      #panel input[type="range"].hue-range::-webkit-slider-thumb {
+        appearance:none; width:18px; height:18px; border:2px solid #fff; border-radius:50%; background:#fff;
+        box-shadow:0 1px 5px rgba(15,23,42,.45);
+      }
+      #panel input[type="range"].hue-range::-moz-range-thumb {
+        width:14px; height:14px; border:2px solid #fff; border-radius:50%; background:#fff;
+        box-shadow:0 1px 5px rgba(15,23,42,.45);
+      }
+      @media (max-width: 760px) {
+        #app { grid-template-columns: 1fr; grid-template-rows: minmax(340px, 48dvh) 1fr; height:auto; min-height:100dvh; }
+        #panel { border-left: 0; border-top: 1px solid var(--line); padding: 22px max(18px, calc((100vw - 520px)/2)); }
+        .stage-caption { top:14px; left:14px; padding:11px 14px; }
       }
     </style>
   </head>
   <body>
     <div id="app">
-      <div id="stage"></div>
+      <div id="stage">
+        <div class="stage-caption"><div class="eyebrow">Estudio · Vista 3D</div><h2>HyperX QuadCast S</h2><p><a href="https://skfb.ly/o8rYZ" target="_blank" rel="noreferrer">“Microphone HyperX QuadCast S”</a> by Sterflycreator · <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a></p><p>Arrastra para girar</p><div id="mute-status" class="mute-status" data-state="unknown" role="status" aria-live="polite">Mute sin sincronizar</div></div>
+      </div>
       <aside id="panel">
-        <div id="controls"></div>
         <div id="meter"></div>
+        <div id="controls"></div>
       </aside>
     </div>
     <script type="module" src="/src/main.ts"></script>

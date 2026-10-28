@@ -64,9 +64,12 @@ Descartado: el brillo. El valor por defecto de QuadcastRGB ya es 100 (`MAX_BR_SP
 El sensor táctil de silencio genera **[verificado]**:
 
 - En `hidraw` (interfaz 1): un informe de 8 bytes `05 10 XX 00 00 00 00 00`. El byte `XX` alterna entre `00` y `01` con cada toque.
+- El informe de eventos alterna `XX` con cada toque; señala una transición, pero no identifica por sí solo el estado absoluto.
 - En `/dev/input/event*` ("Consumer Control"): `BTN_0` (código 256), pulsar y soltar.
 
-Cuál valor de `XX` significa "silenciado" no está determinado **[hipótesis abierta]**.
+Para obtener el estado actual sin esperar un toque, el servicio consulta el informe HID de función `0x07`, comando `0x58`, que reporta mute y patrón polar **[fuente externa; falta confirmarlo con este micrófono]**. La implementación lee el byte 13 para `0951:171f`, según el análisis publicado por [OpenHyperX](https://github.com/chase-irql/OpenHyperX/blob/main/quadcast/hyperx_quadcast.md). Si la consulta no responde, el estado queda desconocido; no se asume que `XX` sea un estado absoluto.
+
+HyperX indica que el LED superior encendido significa micrófono activo y apagado significa mute.
 
 La perilla de ganancia **no generó eventos** en 60 s de escucha. Es coherente con un control analógico por hardware **[hipótesis]**.
 
@@ -74,7 +77,7 @@ La perilla de ganancia **no generó eventos** en 60 s de escucha. Es coherente c
 
 - Probar con `quadcast-s color ff0000 --once` si el micrófono conserva el color sin reenviarlo.
 - Comprobar si la interfaz 0 tenía controlador del kernel antes de usar la herramienta.
-- Determinar qué valor de `XX` significa silenciado.
+- Confirmar en `0951:171f` la consulta HID `0x58` y el byte de estado.
 - Averiguar por qué fallaron las primeras pruebas de RGB.
 - Capturar NGENUITY (Windows) para ver si hay más comandos de audio.
 - REA no aportó nada hasta ahora: no tiene ningún motor de análisis instalado (Ghidra, Hopper, IDA o Kuna). Solo serviría para desensamblar NGENUITY.

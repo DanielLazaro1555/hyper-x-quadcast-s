@@ -1,0 +1,128 @@
+{
+  "Cargo.toml": {
+    "mtime": 1793192911.6094637,
+    "seen": 1793196536.3811033,
+    "ast_hash": "a7d90dafe7557a2a402834763b10e3df",
+    "semantic_hash": ""
+  },
+  "src/device.rs": {
+    "mtime": 1793196801.7289827,
+    "seen": 1793196862.345048,
+    "ast_hash": "f201468b67b0482a7b0b5613f6a1dbca",
+    "semantic_hash": ""
+  },
+  "src/light.rs": {
+    "mtime": 1793196879.2279048,
+    "seen": 1793196885.6637287,
+    "ast_hash": "20f132b0a9d5754693ceed42e3dedec2",
+    "semantic_hash": ""
+  },
+  "src/main.rs": {
+    "mtime": 1793192911.5890455,
+    "seen": 1793196536.3811078,
+    "ast_hash": "8b41125e99cf94d342a33a207184f7c9",
+    "semantic_hash": ""
+  },
+  "src/protocol.rs": {
+    "mtime": 1793196839.4949486,
+    "seen": 1793196862.3450518,
+    "ast_hash": "65c98032ac2aaa1c6bb27748725a64f4",
+    "semantic_hash": ""
+  },
+  "src/server.rs": {
+    "mtime": 1793192911.591578,
+    "seen": 1793196536.3811095,
+    "ast_hash": "449b83a61d3cd85932cd3d6b8b4222bd",
+    "semantic_hash": ""
+  },
+  "web/package.json": {
+    "mtime": 1793192228.1666355,
+    "seen": 1793196536.3811102,
+    "ast_hash": "2fe7c968cffb7f9c206245432ec98e71",
+    "semantic_hash": ""
+  },
+  "web/src/api.ts": {
+    "mtime": 1793196120.6587858,
+    "seen": 1793196536.3811169,
+    "ast_hash": "9efa2679997dc74e0ba5fc1fd79f1a61",
+    "semantic_hash": ""
+  },
+  "web/src/audio/meter.ts": {
+    "mtime": 1793192911.6066055,
+    "seen": 1793196536.3811185,
+    "ast_hash": "15cfc26ed186cf20fd302e218e79a49a",
+    "semantic_hash": ""
+  },
+  "web/src/main.ts": {
+    "mtime": 1793197024.0937448,
+    "seen": 1793197087.502842,
+    "ast_hash": "1870d024c6ebe228c7dddac09971c4fb",
+    "semantic_hash": ""
+  },
+  "web/src/scene/stage.ts": {
+    "mtime": 1793193133.0118093,
+    "seen": 1793196536.3811207,
+    "ast_hash": "05059201bb9f918ae7523c6927908fbd",
+    "semantic_hash": ""
+  },
+  "web/src/state.ts": {
+    "mtime": 1793192911.5981884,
+    "seen": 1793196536.3811216,
+    "ast_hash": "5c27416a9ca880e7f931ade75ef47953",
+    "semantic_hash": ""
+  },
+  "web/src/ui/meter.ts": {
+    "mtime": 1793194287.0533972,
+    "seen": 1793196536.381122,
+    "ast_hash": "904c94ebaf75585ab788149234829820",
+    "semantic_hash": ""
+  },
+  "web/src/ui/panel.ts": {
+    "mtime": 1793194697.8983493,
+    "seen": 1793196536.3811228,
+    "ast_hash": "ef0238e598a5ddf869afcbb49b303e60",
+    "semantic_hash": ""
+  },
+  "web/tsconfig.json": {
+    "mtime": 1793192190.7797365,
+    "seen": 1793196536.3811233,
+    "ast_hash": "cb01b2f125ced3c4328df30043ce6304",
+    "semantic_hash": ""
+  },
+  "web/vite.config.ts": {
+    "mtime": 1793192911.6081665,
+    "seen": 1793196536.3811238,
+    "ast_hash": "e19005e83c88bdc6376ea322fd73fd7a",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1793196879.2609048,
+    "seen": 1793196885.6637409,
+    "ast_hash": "3f48554e9ff6024f4fa90017bb20dc46",
+    "semantic_hash": ""
+  },
+  "docs/ASSET-CREDITS.md": {
+    "mtime": 1793193670.2500765,
+    "seen": 1793196536.3811257,
+    "ast_hash": "18ef3ecfccd2261deab0a6165be8bc9f",
+    "semantic_hash": ""
+  },
+  "docs/PROTOCOL.md": {
+    "mtime": 1793196839.5609486,
+    "seen": 1793196862.3450644,
+    "ast_hash": "64fac3667e78532b052ece68c231c7bd",
+    "semantic_hash": ""
+  },
+  "web/index.html": {
+    "mtime": 1793196131.7117891,
+    "seen": 1793196536.381127,
+    "ast_hash": "caf1ed405ec0633f4c5da5ed782787ae",
+    "semantic_hash": ""
+  },
+  "web/public/models/README.md": {
+    "mtime": 1793193665.5980916,
+    "seen": 1793196536.3811278,
+    "ast_hash": "953a9508426ff7a0c803973c284a2d21",
+    "semantic_hash": ""
+  }
+}
