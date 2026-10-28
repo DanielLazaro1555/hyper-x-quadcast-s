@@ -32,6 +32,7 @@ const store = createStore({ color: "#ff0000", brightness: 100, ...loadCalibratio
 const stage = createStage(required("stage"));
 let importedLedMaterials: THREE.MeshBasicMaterial[] = [];
 let ledGlow: THREE.Mesh | null = null;
+let netMaterial: THREE.MeshStandardMaterial | null = null;
 let importedMuteMaterials: THREE.MeshStandardMaterial[] = [];
 
 // El GLB es un solo modelo negro con un único material; la versión blanca se
@@ -131,6 +132,11 @@ function setImportedLight(rgb: [number, number, number]) {
     // Sin corrección tonal: así un rojo puro se ve rojo y no un durazno desaturado.
     material.color.setRGB(ledEnabled ? r / 255 * level : 0, ledEnabled ? g / 255 * level : 0, ledEnabled ? b / 255 * level : 0);
   });
+  // La luz del LED se derrama sobre la rejilla: un tinte suave en el metal, no un brillo propio.
+  if (netMaterial) {
+    netMaterial.emissive.setRGB(ledEnabled ? r / 255 : 0, ledEnabled ? g / 255 : 0, ledEnabled ? b / 255 : 0);
+    netMaterial.emissiveIntensity = ledEnabled ? 0.22 : 0;
+  }
   // La tapa del sensor táctil no se ilumina nunca: el estado se ve en la malla y en el
   // indicador de la página.
   importedMuteMaterials.forEach((material) => material.color.set(VARIANTS[currentVariant].muteOff));
@@ -194,7 +200,8 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
     }
     if (node.name.toLowerCase().includes("net")) {
       // La malla es metal oscuro: la luz del LED se ve a través de sus agujeros.
-      node.material = makePart("net");
+      netMaterial = makePart("net");
+      node.material = netMaterial;
       model.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(node);
       // Justo por fuera de la espuma interior (radio ≈ 0.317) y por dentro de la malla.
