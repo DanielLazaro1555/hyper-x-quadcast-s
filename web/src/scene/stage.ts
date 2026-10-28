@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-export interface Stage { scene: THREE.Scene; start(): void }
+export interface Stage { scene: THREE.Scene; start(): void; setExposure(value: number): void }
 
 export function createStage(container: HTMLElement): Stage {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -15,6 +16,11 @@ export function createStage(container: HTMLElement): Stage {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf1f5f9);
   scene.fog = new THREE.Fog(0xf1f5f9, 11, 24);
+  // Entorno de estudio: sin nada que reflejar, el metal negro se ve plano y sin detalle.
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.7;
+  pmrem.dispose();
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
   camera.position.set(3.65, 2.25, 6.8);
 
@@ -71,6 +77,7 @@ export function createStage(container: HTMLElement): Stage {
 
   return {
     scene,
+    setExposure(value) { renderer.toneMappingExposure = value; },
     start() { renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); }); },
   };
 }

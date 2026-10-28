@@ -31,35 +31,42 @@ const store = createStore({ color: "#ff0000", brightness: 100, ...loadCalibratio
 
 const stage = createStage(required("stage"));
 let importedLedMaterials: THREE.MeshBasicMaterial[] = [];
+let ledGlow: THREE.Mesh | null = null;
 let importedMuteMaterials: THREE.MeshStandardMaterial[] = [];
 
 // El GLB es un solo modelo negro con un único material; la versión blanca se
 // obtiene repintando las piezas por rol.
 type Variant = "black" | "white";
-type Role = "body" | "net" | "thread";
+type Role = "body" | "net" | "thread" | "foam";
 interface Finish {
   color: number;
   metalness: number;
   roughness: number;
 }
-const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; muteOff: number }> = {
+// Espuma interior: gris-blanco mate en ambos modelos.
+const FOAM: Finish = { color: 0xb4b2ac, metalness: 0, roughness: 1 };
+const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; muteOff: number; exposure: number }> = {
   black: {
     label: "Negro",
     parts: {
-      body: { color: 0x17191d, metalness: 0.58, roughness: 0.42 },
-      net: { color: 0x0b0c0f, metalness: 0.75, roughness: 0.38 },
+      body: { color: 0x23262b, metalness: 0.5, roughness: 0.4 },
+      net: { color: 0x14161a, metalness: 0.7, roughness: 0.36 },
       thread: { color: 0xeceff2, metalness: 0.1, roughness: 0.6 },
+      foam: FOAM,
     },
     muteOff: 0x111316,
+    exposure: 1.15,
   },
   white: {
     label: "Blanco",
     parts: {
-      body: { color: 0xe6e9ed, metalness: 0.2, roughness: 0.5 },
-      net: { color: 0xcdd1d7, metalness: 0.55, roughness: 0.4 },
-      thread: { color: 0x9aa1ab, metalness: 0.2, roughness: 0.55 },
+      body: { color: 0xb9bec6, metalness: 0.15, roughness: 0.5 },
+      net: { color: 0xa4aab3, metalness: 0.45, roughness: 0.4 },
+      thread: { color: 0x8d949e, metalness: 0.15, roughness: 0.55 },
+      foam: FOAM,
     },
     muteOff: 0xc4c9d0,
+    exposure: 0.7,
   },
 };
 const VARIANT_KEY = "quadcast-s.variant";
@@ -80,7 +87,8 @@ function makePart(role: Role): THREE.MeshStandardMaterial {
 }
 function applyVariant(variant: Variant) {
   currentVariant = variant;
-  const { parts } = VARIANTS[variant];
+  const { parts, exposure } = VARIANTS[variant];
+  stage.setExposure(exposure);
   partMaterials.forEach(({ material, role }) => {
     const finish = parts[role];
     material.color.setHex(finish.color);
@@ -105,6 +113,8 @@ function setImportedLight(rgb: [number, number, number]) {
   const [r, g, b] = rgb;
   importedGlow.color.setRGB(ledEnabled ? r / 255 : 0, ledEnabled ? g / 255 : 0, ledEnabled ? b / 255 : 0);
   importedGlow.intensity = ledEnabled ? Math.max(r, g, b) / 255 * (0.25 + audioLevel * 0.5) : 0;
+  // Silenciado: se oculta la luz y a través de la rejilla se ve la espuma.
+  if (ledGlow) ledGlow.visible = ledEnabled;
   importedLedMaterials.forEach((material) => {
     // Sin corrección tonal: así un rojo puro se ve rojo y no un durazno desaturado.
     material.color.setRGB(ledEnabled ? r / 255 * level : 0, ledEnabled ? g / 255 * level : 0, ledEnabled ? b / 255 * level : 0);
@@ -191,10 +201,12 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
       importedLedMaterials.push(led);
       const glowMesh = new THREE.Mesh(glow, led);
       glowMesh.position.copy(box.getCenter(new THREE.Vector3()));
+      ledGlow = glowMesh;
       stage.scene.add(glowMesh);
       return;
     }
-    const role: Role = node.name.toLowerCase().includes("thread") ? "thread" : "body";
+    const name = node.name.toLowerCase();
+    const role: Role = name.includes("thread") ? "thread" : name.includes("foam") ? "foam" : "body";
     node.material = Array.isArray(node.material) ? node.material.map(() => makePart(role)) : makePart(role);
   });
   stage.scene.add(model);
