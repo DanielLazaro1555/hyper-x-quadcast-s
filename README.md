@@ -13,10 +13,10 @@ El proyecto nació de aplicar ingeniería inversa al micrófono. Lo que se sabe 
 | Calibración de color (gamma y ganancia por canal) | Implementada. Aún no hay valores recomendados para colores mezclados como el marrón. |
 | Medidor de audio en vivo (nivel, pico, saturación, espectro) | Implementado, pendiente de confirmar en uso |
 | Apagar las luces (`off`) | Implementado (envía negro). No probado con esta herramienta. |
-| Sensor de silencio (`watch`) | Implementado. No probado con esta herramienta. |
+| Sensor de silencio | Funciona: la web refleja cada toque (`01` activo, `00` silenciado). El estado inicial solo se conoce al primer toque. |
 | Efectos (`blink`, `cycle`, `wave`...) | No implementado |
-| Controles de audio (ganancia, volumen, monitoreo) | El kernel los expone por ALSA y se leyeron, pero la herramienta aún no los usa |
-| Patrón polar | Se supone un control físico del micrófono. Sin comprobar. |
+| Controles de audio (ganancia, volumen, monitorización) | Funciona desde la web (pestaña Audio), por los controles ALSA del kernel |
+| Perillas traseras (ganancia y patrón polar) | Analógicas: no emiten datos en 3 pruebas, así que no se pueden leer ni mover desde el ordenador |
 
 Probado con un micrófono `0951:171f`, `bcdDevice 0x6103`, en Fedora 43. Otras revisiones no están probadas.
 
@@ -173,7 +173,6 @@ Se intentó usar [REA](https://github.com/morluto/rea) como herramienta de ingen
 Ver la lista de [`docs/PROTOCOL.md`](docs/PROTOCOL.md#pendiente). Además:
 
 - Que el servicio sirva la web ya compilada, para distribuir un solo binario.
-- Integrar los controles de audio de ALSA (ganancia de captura, volumen, monitoreo).
 - Medir el ruido de fondo del micrófono en silencio real.
 - Encontrar valores de calibración que den buenos colores mezclados, y fijarlos como valores por defecto.
 - Preparar la distribución (regla `udev`, empaquetado, por ejemplo Flatpak).
