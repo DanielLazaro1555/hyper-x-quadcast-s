@@ -48,6 +48,8 @@ Abre <http://127.0.0.1:5173/>. Desde ahí puedes:
 - Bajar el brillo.
 - Calibrar los colores mezclados (ver abajo).
 - Ver el estado del sensor de silencio físico y **silenciar o reactivar el audio** con un botón (ver `docs/PROTOCOL.md`). El toque físico manda: al tocar el sensor, el botón se pone igual que el micrófono.
+- Usar la pestaña **Audio**: ganancia de captura por software (-8 a +7 dB), volumen de auriculares, monitorización de la propia voz, formato de audio y el medidor en vivo.
+- Ver la pestaña **Dispositivo**: dispositivos USB, versión y una guía de los controles físicos (qué se puede leer y qué no).
 - Cambiar el modelo 3D entre **negro y blanco**.
 - Cambiar entre **modo claro y oscuro**. La elección se recuerda; si no hay ninguna, se sigue la preferencia del sistema.
 - Abrir el medidor de audio.
@@ -102,6 +104,8 @@ El color se reenvía cada 55 ms, como hace QuadcastRGB. El brillo no es un coman
 | Ruta | Qué hace |
 |---|---|
 | `GET /api/status` | Estado: conectado, error, color enviado, `device_rgb` (color que tenía el micrófono al conectar), mute del sensor y `ui` (último color y brillo elegidos en la web) |
+| `GET /api/device` | Controles del mezclador del micrófono, formato de audio que declara por USB y datos de sus dos dispositivos USB |
+| `POST /api/mixer` | Cuerpo JSON `{"id": "capture_gain", "value": 11}`. Ids: `capture_gain`, `capture_switch`, `monitor_volume`, `monitor_switch`, `headphone_volume`, `headphone_switch` |
 | `GET /api/audio` | Mute de audio del micrófono: `{"muted": bool}` |
 | `POST /api/audio` | Cuerpo JSON `{"muted": true\|false}`; silencia o reactiva la captura de audio (control ALSA del kernel, sin PipeWire) |
 | `POST /api/light` | Cuerpo JSON `{"color": "#rrggbb", "brightness": 0-100, "ui_color": "#rrggbb"}`. `ui_color` es opcional: el color sin corregir que la web recupera al recargar |

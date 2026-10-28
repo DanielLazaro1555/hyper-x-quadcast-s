@@ -128,6 +128,31 @@ La web lo usa con el botón «Silenciar audio» a través de `GET/POST /api/audi
 
 `/dev/snd/controlC*` ya es accesible para el usuario con sesión activa, así que **no hace falta ninguna regla udev** para el mute. La regla de `contrib/70-quadcast-s.rules` solo es necesaria para el RGB y el sensor (`171f`).
 
+## Controles del mezclador (ALSA)
+
+`snd-usb-audio` expone estos controles del micrófono. El servicio los lee y escribe con los mismos `ioctl` que el mute (`src/audio.rs`) y la web los usa en la pestaña Audio. Rangos y decibelios salen de `amixer -c N contents`; cada paso suma 1 dB **[declarado por el kernel; no medido paso a paso]**.
+
+| Id | Control ALSA | Canales | Rango | Decibelios |
+|---|---|---|---|---|
+| `capture_gain` | `Mic Capture Volume` | 2 | 0 a 15 | -8 a +7 |
+| `capture_switch` | `Mic Capture Switch` | 1 | 0 o 1 | |
+| `monitor_volume` | `Mic Playback Volume` | 2 | 0 a 36 | -30 a +6 |
+| `monitor_switch` | `Mic Playback Switch` | 1 | 0 o 1 | |
+| `headphone_volume` | `Speaker Playback Volume` | 2 | 0 a 31 | -40 a -9 |
+| `headphone_switch` | `Speaker Playback Switch` | 1 | 0 o 1 | |
+
+Comprobado: escribir `capture_gain` 0, 15 y 11 se lee de vuelta igual, un valor fuera de rango se rechaza, y el nivel del ruido de fondo subió de -64,6 a -54,3 dBFS entre 0 y 15 **[verificado; el aumento medido (unos 10 dB) es menor que el rango declarado (15 dB) porque se midió ruido de fondo, no una señal calibrada]**.
+
+## Formato de audio
+
+El micrófono declara por USB (descriptor AudioStreaming, verificado con `lsusb -v`): 16 bits, 2 canales y **7 tasas discretas: 8000, 11025, 16000, 22050, 32000, 44100 y 48000 Hz**. El máximo de 48 kHz y 16 bits sale de ese descriptor, no solo de la ficha del fabricante.
+
+## Perillas traseras
+
+Ni la perilla de ganancia ni la de patrón polar generaron informes **[verificado en tres pruebas: 60 s, 140 s y 100 s, con el HID del RGB, las entradas del kernel, ALSA y el nivel de audio]**. La conclusión es que son analógicas. El efecto de la ganancia sí se ve en el nivel del audio. En la prueba de 140 s apareció un único evento aislado (`ABS_MISC = 17` en el HID del RGB, a los 43 s) que no se repitió y no se pudo explicar **[sin resolver]**. Con el patrón en bidireccional, los dos canales eran casi idénticos (correlación 0,9997), lo que encaja con un modo mono; falta medirlo en estéreo **[hipótesis]**.
+
+La interfaz 3 del dispositivo de audio es un HID de tipo auricular (volumen, silencio, reproducción, telefonía) que no emitió nada con las perillas. El kernel avisa de que su descriptor está mal formado ("unbalanced collection"), y un desvinculado manual falló al volver a asociarlo hasta reiniciar el dispositivo USB.
+
 ## Pendiente
 
 - Probar con `quadcast-s color ff0000 --once` si el micrófono conserva el color sin reenviarlo.

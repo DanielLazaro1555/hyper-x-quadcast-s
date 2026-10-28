@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-import { getAudioMuted, getStatus, setAudioMuted, setLight, type DeviceStatus } from "./api";
+import { getAudioMuted, getDevice, getStatus, setAudioMuted, setLight, type DeviceStatus } from "./api";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { createStage, type Look } from "./scene/stage";
 import { applyBrightness, correctColor, createStore, loadCalibration, saveCalibration, uncorrectColor } from "./state";
 import { theme } from "./theme";
+import { mountDevice } from "./ui/device";
 import { mountMeter } from "./ui/meter";
+import { mountMixer } from "./ui/mixer";
 import { mountPanel } from "./ui/panel";
 
 const POLL_MS = 400;
@@ -242,6 +244,53 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
 
 const panel = mountPanel(required("controls"), store);
 mountMeter(required("meter"), setAudioLevel);
+
+// Pestañas del panel: Luz, Audio y Dispositivo. Se recuerda la última abierta.
+type Tab = "light" | "audio" | "device";
+const TABS: Tab[] = ["light", "audio", "device"];
+const TAB_KEY = "quadcast-s.tab";
+const mixer = mountMixer(required("mixer"), (message) => panel.setStatus(message));
+const device = mountDevice(required("device"));
+let currentTab: Tab = "light";
+
+function showTab(tab: Tab) {
+  currentTab = tab;
+  for (const t of TABS) {
+    required(`tab-${t}`).hidden = t !== tab;
+    required<HTMLButtonElement>(`tab-btn-${t}`).setAttribute("aria-selected", String(t === tab));
+  }
+  try {
+    localStorage.setItem(TAB_KEY, tab);
+  } catch {
+    // sin almacenamiento solo se pierde el recuerdo de la pestaña
+  }
+  if (tab !== "light") void pollDevice();
+}
+
+async function pollDevice() {
+  try {
+    const info = await getDevice();
+    mixer.update(info);
+    device.update(info);
+  } catch {
+    // sin servicio: ya lo avisa el sondeo principal
+  }
+}
+
+for (const t of TABS) required<HTMLButtonElement>(`tab-btn-${t}`).addEventListener("click", () => showTab(t));
+{
+  let saved: string | null = null;
+  try {
+    saved = localStorage.getItem(TAB_KEY);
+  } catch {
+    saved = null;
+  }
+  showTab(TABS.find((t) => t === saved) ?? "light");
+}
+// Los controles del sistema pueden cambiar por fuera: se refrescan mientras la pestaña está a la vista.
+window.setInterval(() => {
+  if (currentTab !== "light" && !document.hidden) void pollDevice();
+}, 2000);
 store.subscribe((s) => {
   const rgb = displayRgb(correctColor(s.color, s), s.brightness);
   setImportedLight(rgb);

@@ -88,6 +88,13 @@
       .mute-toggle[disabled] { opacity:.5; cursor:default; }
       #panel { background: var(--panel); border-left: 1px solid var(--line); padding: 24px;
         overflow-y: auto; box-shadow:-4px 0 15px var(--shadow); display:flex; flex-direction:column; gap:22px; }
+      #tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; padding:4px; border:1px solid var(--line);
+        border-radius:10px; background:var(--surface); position:sticky; top:-24px; z-index:6; margin-top:-8px; }
+      #tabs button { padding:8px 6px; border:0; border-radius:7px; background:transparent; color:var(--muted);
+        font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+      #tabs button:hover { color:var(--text); }
+      #tabs button[aria-selected="true"] { background:var(--card); color:var(--text); box-shadow:0 1px 4px var(--shadow); }
+      #panel [hidden] { display:none !important; }
       #meter { padding-bottom:20px; border-bottom:1px solid var(--line); }
       #panel select, #panel button { font-family:inherit; }
       #panel button:focus-visible, #panel input:focus-visible, #panel select:focus-visible {
@@ -115,8 +122,14 @@
         <div class="stage-caption"><div class="eyebrow">Estudio · Vista 3D</div><h2>HyperX QuadCast S</h2><p><a href="https://skfb.ly/o8rYZ" target="_blank" rel="noreferrer">“Microphone HyperX QuadCast S”</a> by Sterflycreator · <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a></p><p>Arrastra para girar</p><div class="caption-actions"><div id="mute-status" class="mute-status" data-state="unknown" role="status" aria-live="polite">Mute sin sincronizar</div><button id="audio-mute" class="mute-toggle" type="button" disabled>Silenciar audio</button><button id="variant" class="mute-toggle" type="button">Modelo</button><button id="theme" class="mute-toggle" type="button">Tema</button></div></div>
       </div>
       <aside id="panel">
-        <div id="meter"></div>
-        <div id="controls"></div>
+        <nav id="tabs" role="tablist" aria-label="Secciones del panel">
+          <button type="button" role="tab" id="tab-btn-light" data-tab="light" aria-controls="tab-light">Luz</button>
+          <button type="button" role="tab" id="tab-btn-audio" data-tab="audio" aria-controls="tab-audio">Audio</button>
+          <button type="button" role="tab" id="tab-btn-device" data-tab="device" aria-controls="tab-device">Dispositivo</button>
+        </nav>
+        <div id="tab-light" role="tabpanel" aria-labelledby="tab-btn-light"><div id="controls"></div></div>
+        <div id="tab-audio" role="tabpanel" aria-labelledby="tab-btn-audio" hidden><div id="meter"></div><div id="mixer"></div></div>
+        <div id="tab-device" role="tabpanel" aria-labelledby="tab-btn-device" hidden><div id="device"></div></div>
       </aside>
     </div>
     <script type="module" src="/src/main.ts"></script>
