@@ -31,6 +31,9 @@ struct LightRequest {
     /// Color elegido en la web antes de la corrección de gamma y ganancia.
     #[serde(default)]
     ui_color: Option<String>,
+    /// Cambio pasajero (el brillo al ritmo del audio): no se recuerda como elección.
+    #[serde(default)]
+    transient: bool,
 }
 
 #[derive(Deserialize)]
@@ -115,8 +118,14 @@ fn handle(request: &mut Request, light: &Light) -> Reply {
             }
             match protocol::parse_hex_color(&req.color) {
                 Ok(rgb) => {
-                    if let Some(ui) = req.ui_color.as_deref().filter(|c| protocol::parse_hex_color(c).is_ok()) {
-                        light.set_ui(UiColor { color: ui.to_string(), brightness: req.brightness });
+                    if !req.transient {
+                        // Cualquier cambio queda registrado para que la web lo vea. Sin
+                        // `ui_color` el color que llega es el ya corregido.
+                        let ui = match req.ui_color.as_deref().filter(|c| protocol::parse_hex_color(c).is_ok()) {
+                            Some(color) => UiColor { color: color.to_string(), brightness: req.brightness, corrected: false },
+                            None => UiColor { color: req.color.clone(), brightness: req.brightness, corrected: true },
+                        };
+                        light.set_ui(ui);
                     }
                     light.set(protocol::apply_brightness(rgb, req.brightness));
                     reply(200, &status())

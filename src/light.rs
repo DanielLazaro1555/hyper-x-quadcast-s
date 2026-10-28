@@ -19,6 +19,9 @@ const RETRY_INTERVAL: Duration = Duration::from_secs(1);
 pub struct UiColor {
     pub color: String,
     pub brightness: u8,
+    /// `true` si `color` es el que recibió el micrófono (ya con gamma y ganancias), por
+    /// ejemplo desde la API; `false` si es el elegido en la web, sin corregir.
+    pub corrected: bool,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]

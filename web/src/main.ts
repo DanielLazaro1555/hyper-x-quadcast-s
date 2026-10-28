@@ -161,7 +161,7 @@ function setAudioLevel(level: number, active: boolean) {
   if (!active) {
     if (audioSyncActive) {
       audioSyncActive = false;
-      push({ color: correctColor(state.color, state), brightness: state.brightness });
+      push({ color: correctColor(state.color, state), brightness: state.brightness, uiColor: state.color });
     }
     return;
   }
@@ -171,7 +171,7 @@ function setAudioLevel(level: number, active: boolean) {
   if (now - lastHardwareSync < 100) return;
   lastHardwareSync = now;
   const audioBrightness = Math.round(state.brightness * (0.24 + audioLevel * 0.76));
-  push({ color: correctColor(state.color, state), brightness: audioBrightness });
+  push({ color: correctColor(state.color, state), brightness: audioBrightness, transient: true });
 }
 new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
   const initial = new THREE.Box3().setFromObject(model);
@@ -252,17 +252,27 @@ interface Pending {
   brightness: number;
   /** Color elegido sin corregir; el servicio lo guarda para recuperarlo al recargar. */
   uiColor?: string;
+  /** Cambio pasajero (brillo al ritmo del audio): el servicio no lo recuerda. */
+  transient?: boolean;
 }
 let inFlight = false;
 let pending: Pending | null = null;
+// Último color que envió esta página: sirve para no tratarlo como un cambio externo.
+let lastSentUi = "";
+let lastPushAt = -Infinity;
+function uiKey(color: string, brightness: number, corrected: boolean): string {
+  return `${color.toLowerCase()}|${brightness}|${corrected}`;
+}
 
 function push(value: Pending) {
+  lastPushAt = performance.now();
+  if (value.uiColor) lastSentUi = uiKey(value.uiColor, value.brightness, false);
   if (inFlight) {
     pending = value;
     return;
   }
   inFlight = true;
-  setLight(value.color, value.brightness, value.uiColor)
+  setLight(value.color, value.brightness, value.uiColor, value.transient)
     .then((s) => {
       panel.setStatus(describe(s));
       setMuteState(s.muted);
@@ -349,19 +359,47 @@ function fromDeviceColor(rgb: [number, number, number] | null): { color: string;
   const normalized = rgb.map((c) => Math.round((c * 255) / max)) as [number, number, number];
   return { color: uncorrectColor(normalized, store.get()), brightness: Math.max(1, Math.round((max / 255) * 100)) };
 }
-let colorRestored = false;
+// Último estado `ui` del servicio que esta página ya procesó.
+let lastSeenUi: string | null = null;
+
+/** Lleva un color que viene del servicio a la web, sin reenviarlo al micrófono. */
+function applyRemote(color: string, brightness: number) {
+  restoring = true;
+  store.set({ color, brightness });
+  restoring = false;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+}
+
+/** Sigue los cambios de color hechos desde fuera (API) y, al abrir, recupera el último. */
+function syncColor(status: DeviceStatus) {
+  if (lastSeenUi === null) {
+    // Primera lectura: el último color elegido y, si no hay, el que tenía el micrófono.
+    lastSeenUi = status.ui ? uiKey(status.ui.color, status.ui.brightness, status.ui.corrected) : "";
+    const first = status.ui
+      ? { color: status.ui.corrected ? uncorrectColor(hexToRgb(status.ui.color), store.get()) : status.ui.color, brightness: status.ui.brightness }
+      : fromDeviceColor(status.device_rgb);
+    if (first) applyRemote(first.color, first.brightness);
+    return;
+  }
+  const ui = status.ui;
+  if (!ui) return;
+  const key = uiKey(ui.color, ui.brightness, ui.corrected);
+  if (key === lastSeenUi) return;
+  lastSeenUi = key;
+  // Lo que envió esta misma página, o un cambio que aún está en camino, no es externo.
+  // Un sondeo anterior a un cambio reciente de esta página tampoco cuenta.
+  if (key === lastSentUi || inFlight || pending || performance.now() - lastPushAt < 1500) return;
+  applyRemote(ui.corrected ? uncorrectColor(hexToRgb(ui.color), store.get()) : ui.color, ui.brightness);
+}
+
 async function poll() {
   try {
     const status = await getStatus();
-    if (!colorRestored) {
-      colorRestored = true;
-      const restored = status.ui ?? fromDeviceColor(status.device_rgb);
-      if (restored) {
-        restoring = true;
-        store.set({ color: restored.color, brightness: restored.brightness });
-        restoring = false;
-      }
-    }
+    syncColor(status);
     panel.setStatus(describe(status));
     setMuteState(status.muted);
   } catch {
