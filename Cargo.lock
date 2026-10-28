@@ -169,6 +169,7 @@ name = "quadcast-s"
 version = "0.1.0"
 dependencies = [
  "ctrlc",
+ "libc",
  "rusb",
  "serde",
  "serde_json",

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-import { getStatus, setLight, type DeviceStatus } from "./api";
+import { getAudioMuted, getStatus, setAudioMuted, setLight, type DeviceStatus } from "./api";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { createStage } from "./scene/stage";
@@ -240,6 +240,30 @@ store.subscribe((s) => {
   push({ color: correctColor(s.color, s), brightness: s.brightness });
 });
 
+const audioButton = required<HTMLButtonElement>("audio-mute");
+let audioMuted: boolean | null = null;
+function renderAudioButton() {
+  audioButton.disabled = audioMuted === null;
+  audioButton.textContent = audioMuted ? "Reactivar audio" : "Silenciar audio";
+}
+audioButton.addEventListener("click", () => {
+  if (audioMuted === null) return;
+  audioButton.disabled = true;
+  setAudioMuted(!audioMuted)
+    .then((m) => (audioMuted = m))
+    .catch((e: Error) => panel.setStatus(`No se pudo cambiar el audio: ${e.message}`))
+    .finally(renderAudioButton);
+});
+
+async function pollAudio() {
+  try {
+    audioMuted = await getAudioMuted();
+  } catch {
+    audioMuted = null;
+  }
+  renderAudioButton();
+}
+
 async function poll() {
   try {
     const status = await getStatus();
@@ -250,6 +274,8 @@ async function poll() {
   }
 }
 void poll();
+void pollAudio();
 window.setInterval(() => void poll(), POLL_MS);
+window.setInterval(() => void pollAudio(), 1500);
 
 stage.start();

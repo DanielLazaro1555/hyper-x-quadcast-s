@@ -37,6 +37,10 @@
       .mute-status[data-state="active"]::before { background:#22c55e; }
       .mute-status[data-state="muted"] { border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
       .mute-status[data-state="muted"]::before { background:#ef4444; }
+      .mute-toggle { margin:8px 0 0 8px; padding:5px 11px; border:1px solid #cbd5e1; border-radius:999px;
+        background:#fff; color:#334155; font-size:11px; font-weight:600; cursor:pointer; pointer-events:auto; }
+      .mute-toggle:hover { background:#f1f5f9; }
+      .mute-toggle[disabled] { opacity:.5; cursor:default; }
       #panel { background: var(--panel); border-left: 1px solid var(--line); padding: 24px;
         overflow-y: auto; box-shadow:-4px 0 15px rgba(0,0,0,.025); display:flex; flex-direction:column; gap:22px; }
       #meter { padding-bottom:20px; border-bottom:1px solid var(--line); }
@@ -63,7 +67,7 @@
   <body>
     <div id="app">
       <div id="stage">
-        <div class="stage-caption"><div class="eyebrow">Estudio · Vista 3D</div><h2>HyperX QuadCast S</h2><p><a href="https://skfb.ly/o8rYZ" target="_blank" rel="noreferrer">“Microphone HyperX QuadCast S”</a> by Sterflycreator · <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a></p><p>Arrastra para girar</p><div id="mute-status" class="mute-status" data-state="unknown" role="status" aria-live="polite">Mute sin sincronizar</div></div>
+        <div class="stage-caption"><div class="eyebrow">Estudio · Vista 3D</div><h2>HyperX QuadCast S</h2><p><a href="https://skfb.ly/o8rYZ" target="_blank" rel="noreferrer">“Microphone HyperX QuadCast S”</a> by Sterflycreator · <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a></p><p>Arrastra para girar</p><div id="mute-status" class="mute-status" data-state="unknown" role="status" aria-live="polite">Mute sin sincronizar</div><button id="audio-mute" class="mute-toggle" type="button" disabled>Silenciar audio</button></div>
       </div>
       <aside id="panel">
         <div id="meter"></div>

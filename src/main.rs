@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
+mod audio;
 mod device;
 mod light;
 mod protocol;
@@ -18,6 +19,7 @@ uso: quadcast-s <comando>
   color <RRGGBB> [opciones]   fija un color (por defecto hasta Ctrl+C)
   off [opciones]              apaga las luces (envía negro)
   watch                       muestra los eventos del sensor de silencio
+  mute [on|off|toggle]        silencia o reactiva el audio (sin argumento, muestra el estado)
   serve                       API local para la interfaz web (127.0.0.1:7878)
   info                        detecta el micrófono
 
@@ -103,6 +105,18 @@ fn run_serve() -> Result<(), String> {
     // `light` se suelta aquí: el hilo termina y se devuelve `usbhid`.
 }
 
+fn run_mute(action: Option<&str>) -> Result<(), String> {
+    let muted = match action {
+        None => audio::is_muted()?,
+        Some("on") => audio::set_muted(true)?,
+        Some("off") => audio::set_muted(false)?,
+        Some("toggle") => audio::set_muted(!audio::is_muted()?)?,
+        Some(other) => return Err(format!("'{other}' no es válido; usa on, off o toggle")),
+    };
+    println!("audio {}", if muted { "silenciado" } else { "activo" });
+    Ok(())
+}
+
 fn run(args: &[String]) -> Result<(), String> {
     match args.first().map(String::as_str) {
         Some("color") => {
@@ -111,6 +125,7 @@ fn run(args: &[String]) -> Result<(), String> {
         }
         Some("off") => run_color([0, 0, 0], parse_color_options(&args[1..])?),
         Some("watch") => run_watch(),
+        Some("mute") => run_mute(args.get(1).map(String::as_str)),
         Some("serve") => run_serve(),
         Some("info") => device::info().map(|line| println!("{line}")),
         _ => Err(USAGE.to_string()),

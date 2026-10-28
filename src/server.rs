@@ -14,6 +14,7 @@ use std::time::Duration;
 use serde::Deserialize;
 use tiny_http::{Header, Method, Request, Response, Server};
 
+use crate::audio;
 use crate::light::Light;
 use crate::protocol;
 
@@ -29,6 +30,11 @@ struct LightRequest {
     brightness: u8,
 }
 
+#[derive(Deserialize)]
+struct AudioRequest {
+    muted: bool,
+}
+
 type Reply = Response<std::io::Cursor<Vec<u8>>>;
 
 fn reply(code: u16, body: &str) -> Reply {
@@ -39,6 +45,13 @@ fn reply(code: u16, body: &str) -> Reply {
 
 fn error(code: u16, msg: &str) -> Reply {
     reply(code, &serde_json::json!({ "error": msg }).to_string())
+}
+
+fn audio_reply(result: Result<bool, String>) -> Reply {
+    match result {
+        Ok(muted) => reply(200, &serde_json::json!({ "muted": muted }).to_string()),
+        Err(msg) => error(500, &msg),
+    }
 }
 
 fn header(request: &Request, name: &'static str) -> Option<String> {
@@ -64,6 +77,22 @@ fn handle(request: &mut Request, light: &Light) -> Reply {
 
     match (request.method().clone(), request.url()) {
         (Method::Get, "/api/status") => reply(200, &status()),
+        (Method::Get, "/api/audio") => audio_reply(audio::is_muted()),
+        (Method::Post, "/api/audio") => {
+            let is_json = header(request, "Content-Type")
+                .is_some_and(|t| t.to_ascii_lowercase().starts_with("application/json"));
+            if !is_json {
+                return error(415, "se espera Content-Type: application/json");
+            }
+            let mut body = String::new();
+            if request.as_reader().take(MAX_BODY).read_to_string(&mut body).is_err() {
+                return error(400, "cuerpo ilegible");
+            }
+            match serde_json::from_str::<AudioRequest>(&body) {
+                Ok(req) => audio_reply(audio::set_muted(req.muted)),
+                Err(e) => error(400, &format!("JSON inválido: {e}")),
+            }
+        }
         (Method::Post, "/api/light") => {
             let is_json = header(request, "Content-Type")
                 .is_some_and(|t| t.to_ascii_lowercase().starts_with("application/json"));

@@ -97,6 +97,8 @@ El color se reenvía cada 55 ms, como hace QuadcastRGB. El brillo no es un coman
 | Ruta | Qué hace |
 |---|---|
 | `GET /api/status` | Estado: conectado, error, color y estado de mute conocido |
+| `GET /api/audio` | Mute de audio del micrófono: `{"muted": bool}` |
+| `POST /api/audio` | Cuerpo JSON `{"muted": true\|false}`; silencia o reactiva la captura de audio (control ALSA del kernel, sin PipeWire) |
 | `POST /api/light` | Cuerpo JSON `{"color": "#rrggbb", "brightness": 0-100}` |
 
 Un servicio local que controla hardware es un blanco fácil si cualquier página del navegador puede hablarle. Por eso solo escucha en `127.0.0.1`, y además:

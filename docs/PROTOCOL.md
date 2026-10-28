@@ -73,6 +73,41 @@ HyperX indica que el LED superior encendido significa micrófono activo y apagad
 
 La perilla de ganancia **no generó eventos** en 60 s de escucha. Es coherente con un control analógico por hardware **[hipótesis]**.
 
+## Mute de audio (control ALSA del kernel)
+
+El sensor táctil **no se puede accionar por HID**: solo se lee. Lo que sí se puede cambiar desde el ordenador es el mute de la captura de audio, que vive en el propio micrófono. No depende de PipeWire, PulseAudio ni `alsa-lib`.
+
+El audio es un dispositivo USB distinto del RGB: `0951:171d` (el RGB y el sensor son `0951:171f`). Su interfaz 0 es AudioControl (UAC 1.0). El camino de captura es `terminal 2 (micrófono) → Feature Unit 10 → Selector 8 → terminal 7 (USB)`; el Feature Unit 13 alimenta el mezclador de monitorización **[verificado con `lsusb -v`]**. El mute es el control de Mute del Feature Unit 10.
+
+### Lo que no funciona: petición USB directa
+
+Mandar `SET_CUR`/`GET_CUR` (`bmRequestType 0x21/0xa1`, `wValue 0x0100`, `wIndex unit<<8`) con `libusb` **falla con `Input/Output Error`** para cualquier unidad y canal **[verificado]**. `snd-usb-audio` es dueño de las interfaces de audio: `usbfs` rechaza las peticiones a una interfaz ajena y `claim_interface` devuelve `Busy`. Quitarle la interfaz al kernel cortaría el audio, así que se descartó.
+
+### Lo que sí funciona: el control del kernel
+
+`snd-usb-audio` expone ese mismo mute como el control `Mic Capture Switch` (interfaz `MIXER`) en `/dev/snd/controlC<N>`, y él traduce la escritura a la petición UAC. `src/audio.rs` lo manipula con dos `ioctl` directos (`SNDRV_CTL_IOCTL_ELEM_READ` `0xC4C85512` y `ELEM_WRITE` `0xC4C85513`, estructura `snd_ctl_elem_value` de 1224 bytes en 64 bits), sin `alsa-lib`:
+
+1. Busca la tarjeta en `/sys/class/sound/card*` cuyo dispositivo USB padre es `0951:171d` (el número `N` cambia entre arranques).
+2. Abre `/dev/snd/controlC<N>`.
+3. Lee o escribe el elemento `Mic Capture Switch`. El valor es un *switch* de captura: `1` = el sonido pasa, `0` = silenciado.
+
+Equivale a `amixer -c N cset name='Mic Capture Switch' off|on` **[verificado: silencia y PipeWire lo muestra como `MUTED`]**. Es independiente del LED y del sensor: este mute no apaga el RGB.
+
+Uso:
+
+```bash
+quadcast-s mute          # estado
+quadcast-s mute on       # silenciar
+quadcast-s mute off      # reactivar
+quadcast-s mute toggle
+```
+
+La web lo usa con el botón «Silenciar audio» a través de `GET/POST /api/audio`.
+
+### Permisos
+
+`/dev/snd/controlC*` ya es accesible para el usuario con sesión activa, así que **no hace falta ninguna regla udev** para el mute. La regla de `contrib/70-quadcast-s.rules` solo es necesaria para el RGB y el sensor (`171f`).
+
 ## Pendiente
 
 - Probar con `quadcast-s color ff0000 --once` si el micrófono conserva el color sin reenviarlo.

@@ -27,3 +27,22 @@ export async function setLight(color: string, brightness: number): Promise<Devic
     }),
   );
 }
+
+/** Mute de software (PipeWire) del micrófono; no es el sensor táctil. */
+export async function getAudioMuted(): Promise<boolean> {
+  const res = await fetch("/api/audio");
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error ?? `error HTTP ${res.status}`);
+  return body.muted as boolean;
+}
+
+export async function setAudioMuted(muted: boolean): Promise<boolean> {
+  const res = await fetch("/api/audio", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ muted }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error ?? `error HTTP ${res.status}`);
+  return body.muted as boolean;
+}

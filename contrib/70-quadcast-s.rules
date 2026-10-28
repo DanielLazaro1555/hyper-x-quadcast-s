@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Permite al usuario con sesión activa hablar con el RGB y el sensor del HyperX
+# QuadCast S (0951:171f) sin root. El mute de audio no la necesita: usa
+# /dev/snd/controlC*.
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="171f", TAG+="uaccess"
