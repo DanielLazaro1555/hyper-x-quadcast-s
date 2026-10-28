@@ -311,17 +311,26 @@ async function pollAudio() {
   renderAudioButton();
 }
 
-// El micrófono no permite leer su color: al abrir la web se recupera el último que
-// el servicio recibió, para no arrancar siempre en rojo. Solo se hace una vez.
+// Al abrir la web se recupera el color: primero el último que eligió la web (el
+// servicio lo recuerda) y, si no hay, el que el micrófono tenía al conectar. Solo una vez.
+/** El micrófono guarda el color ya con brillo y calibración: se separa el brillo como el canal mayor. */
+function fromDeviceColor(rgb: [number, number, number] | null): { color: string; brightness: number } | null {
+  if (!rgb) return null;
+  const max = Math.max(...rgb);
+  if (max === 0) return null;
+  const hex = rgb.map((c) => Math.round((c * 255) / max).toString(16).padStart(2, "0")).join("");
+  return { color: `#${hex}`, brightness: Math.max(1, Math.round((max / 255) * 100)) };
+}
 let colorRestored = false;
 async function poll() {
   try {
     const status = await getStatus();
     if (!colorRestored) {
       colorRestored = true;
-      if (status.ui) {
+      const restored = status.ui ?? fromDeviceColor(status.device_rgb);
+      if (restored) {
         restoring = true;
-        store.set({ color: status.ui.color, brightness: status.ui.brightness });
+        store.set({ color: restored.color, brightness: restored.brightness });
         restoring = false;
       }
     }

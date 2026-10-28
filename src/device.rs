@@ -14,7 +14,7 @@ const REQUEST_TYPE_OUT: u8 = 0x21;
 const REQUEST_SET_REPORT: u8 = 0x09;
 const W_VALUE: u16 = 0x0300;
 const W_INDEX: u16 = 0;
-const FEATURE_REPORT_ID: u16 = 0x07;
+const REQUEST_TYPE_IN: u8 = 0xa1;
 const REQUEST_GET_REPORT: u8 = 0x01;
 const INTERFACES: [u8; 2] = [0, 1];
 const EP_IN: u8 = 0x82;
@@ -77,53 +77,17 @@ impl Mic {
         }
     }
 
-    /// Consulta el estado actual guardado por el controlador QuadCast S.
-    /// El informe 0x07 / comando 0x58 es una consulta de solo lectura.
-    pub fn read_mute_status(&self) -> Result<Option<bool>, String> {
-        let mut request = [0u8; 65];
-        request[0] = FEATURE_REPORT_ID as u8;
-        request[1] = 0x04;
-        request[2] = 0x58;
-        request[9] = 0x01;
-        self.handle
-            .write_control(
-                REQUEST_TYPE_OUT,
-                REQUEST_SET_REPORT,
-                0x0300 | FEATURE_REPORT_ID,
-                W_INDEX,
-                &request,
-                TIMEOUT,
-            )
-            .map_err(|e| format!("falló la consulta HID de mute: {e}"))?;
-
-        let mut response = [0u8; 65];
+    /// Color que el micrófono tiene ahora, si se puede saber. Es el último paquete de
+    /// color que recibió: el informe de función del dispositivo devuelve el último
+    /// búfer escrito, así que solo vale mientras nadie haya escrito otra cosa después.
+    /// No debe llamarse tras enviar una consulta o una cabecera propias.
+    pub fn read_current_color(&self) -> Result<Option<[u8; 3]>, String> {
+        let mut buf = [0u8; protocol::PACKET_SIZE];
         let len = self
             .handle
-            .read_control(
-                0xa1,
-                REQUEST_GET_REPORT,
-                0x0300 | FEATURE_REPORT_ID,
-                W_INDEX,
-                &mut response,
-                TIMEOUT,
-            )
-            .map_err(|e| format!("falló la lectura HID de mute: {e}"))?;
-
-        // Algunas interfaces HID incluyen el ID de informe en los bytes leídos;
-        // otras lo consumen en wValue. Aceptamos ambas disposiciones del ACK.
-        let (command_at, ack_at, muted_at) = if response[0] == FEATURE_REPORT_ID as u8 {
-            (2, 4, 13)
-        } else {
-            (1, 3, 12)
-        };
-        if len <= muted_at || response[command_at] != 0x58 || response[ack_at] != 0x01 {
-            return Ok(None);
-        }
-        match response[muted_at] {
-            0 => Ok(Some(false)),
-            1 => Ok(Some(true)),
-            _ => Ok(None),
-        }
+            .read_control(REQUEST_TYPE_IN, REQUEST_GET_REPORT, W_VALUE, W_INDEX, &mut buf, TIMEOUT)
+            .map_err(|e| format!("falló la lectura del color: {e}"))?;
+        Ok(protocol::parse_color_packet(&buf[..len]))
     }
 }
 

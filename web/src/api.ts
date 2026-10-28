@@ -6,6 +6,8 @@ export interface DeviceStatus {
   error: string | null;
   rgb: [number, number, number] | null;
   muted: boolean | null;
+  /** Color que el micrófono tenía al conectar el servicio (leído de su búfer), si se pudo leer. */
+  device_rgb: [number, number, number] | null;
   /** Último color elegido en la web (sin corregir); el micrófono no permite leer el suyo. */
   ui: { color: string; brightness: number } | null;
 }

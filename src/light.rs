@@ -4,7 +4,7 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread::{self, JoinHandle};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use serde::Serialize;
 
@@ -12,7 +12,6 @@ use crate::device::Mic;
 
 pub const FRAME_INTERVAL: Duration = Duration::from_millis(55);
 const RETRY_INTERVAL: Duration = Duration::from_secs(1);
-const MUTE_STATUS_INTERVAL: Duration = Duration::from_millis(400);
 
 /// Último color elegido en la web, sin corregir. El micrófono no permite leer su
 /// color, así que esto es lo que la web recupera al abrirse o recargarse.
@@ -27,6 +26,8 @@ pub struct Status {
     pub connected: bool,
     pub error: Option<String>,
     pub rgb: Option<[u8; 3]>,
+    /// Color que el micrófono ya tenía al conectar (antes de enviarle nada), si se pudo leer.
+    pub device_rgb: Option<[u8; 3]>,
     /// `None` until the HID status query returns a valid report.
     pub muted: Option<bool>,
     /// Lo rellena `Light::status`, no el hilo del micrófono.
@@ -105,14 +106,15 @@ fn wait_next_frame(shared: &Shared) {
 fn run(shared: &Shared) {
     let mut mic: Option<Mic> = None;
     let mut muted: Option<bool> = None;
-    let mut next_mute_status = Instant::now();
+    let mut device_rgb: Option<[u8; 3]> = None;
 
     while shared.running.load(Ordering::SeqCst) {
         if mic.is_none() {
             match Mic::open() {
                 Ok(m) => {
+                    // Antes de escribirle nada: la lectura devuelve su último color.
+                    device_rgb = m.read_current_color().ok().flatten();
                     mic = Some(m);
-                    next_mute_status = Instant::now();
                 }
                 Err(error) => {
                     muted = None;
@@ -121,6 +123,7 @@ fn run(shared: &Shared) {
                         error: Some(error),
                         rgb: *lock(&shared.target),
                         muted,
+                        device_rgb,
                         ui: None,
                     });
                     thread::sleep(RETRY_INTERVAL);
@@ -145,19 +148,10 @@ fn run(shared: &Shared) {
                             // El evento lleva el estado absoluto: 01 = activo (LED
                             // encendido), 00 = silenciado. Verificado tocando el sensor.
                             muted = Some(event == 0);
-                            next_mute_status = Instant::now();
                         }
-                    }
-                    // La consulta de solo lectura obtiene el estado absoluto al inicio
-                    // y corrige cualquier transición observada desde el último sondeo.
-                    if Instant::now() >= next_mute_status {
-                        if let Ok(Some(state)) = device.read_mute_status() {
-                            muted = Some(state);
-                        }
-                        next_mute_status = Instant::now() + MUTE_STATUS_INTERVAL;
                     }
                 }
-                set_status(shared, Status { connected: true, error: None, rgb: target, muted, ui: None });
+                set_status(shared, Status { connected: true, error: None, rgb: target, muted, device_rgb, ui: None });
                 if target.is_some() {
                     wait_next_frame(shared);
                 }
@@ -165,7 +159,8 @@ fn run(shared: &Shared) {
             Err(error) => {
                 mic = None; // libera las interfaces antes de reintentar
                 muted = None;
-                set_status(shared, Status { connected: false, error: Some(error), rgb: target, muted, ui: None });
+                device_rgb = None;
+                set_status(shared, Status { connected: false, error: Some(error), rgb: target, muted, device_rgb, ui: None });
                 thread::sleep(RETRY_INTERVAL);
             }
         }

@@ -67,11 +67,31 @@ El sensor táctil de silencio genera **[verificado]**:
 - En `/dev/input/event*` ("Consumer Control"): `BTN_0` (código 256), pulsar y soltar.
 - El sensor silencia **por hardware**: no cambia el interruptor ALSA `Mic Capture Switch` **[verificado]**. Son dos mutes independientes (ver más abajo).
 
-La consulta HID de función `0x07`, comando `0x58` que describe OpenHyperX **no responde con datos en este micrófono** (`0951:171f`): devuelve `00 00 00 ff 00 …`, sin comando ni ACK **[verificado]**. Por eso el estado inicial es desconocido hasta el primer toque; el servicio muestra «pendiente» y no lo adivina. La consulta se mantiene por si otro firmware sí responde.
+La consulta HID de función `0x07`, comando `0x58` que describe OpenHyperX **no responde con datos en este micrófono** (`0951:171f`): devuelve `00 00 00 ff …`, sin comando ni ACK **[verificado]**. El servicio ya no la envía. El estado inicial del mute es desconocido hasta el primer toque; el servicio muestra «pendiente» y no lo adivina.
 
 HyperX indica que el LED superior encendido significa micrófono activo y apagado significa mute.
 
 La perilla de ganancia **no generó eventos** en 60 s de escucha. Es coherente con un control analógico por hardware **[hipótesis]**.
+
+## Leer el color del micrófono
+
+Contra lo que parecía, el color **sí se puede leer**, con una limitación importante **[verificado]**. La interfaz 0 tiene un informe de función de 64 bytes (`GET_REPORT`, `bmRequestType 0xa1`, `bRequest 0x01`, `wValue 0x0300`, `wIndex 0`). Devuelve el **último búfer escrito**:
+
+| Después de… | Lectura |
+|---|---|
+| `color 00ff00` | `81 00 ff 00 81 00 ff 00 00 …` |
+| `color ff8000 -b 50` | `81 7f 40 00 81 7f 40 00 00 …` (brillo ya aplicado) |
+| una escritura `04 58 …` | la propia consulta devuelta |
+
+Es decir, el paquete de color `81 RR GG BB` dos veces. Como cada fotograma termina con el paquete de color, lo que se lee es el color que el micrófono está mostrando, venga de este programa o de otro (QuadcastRGB, NGENUITY).
+
+**La lectura consume el dato**: la primera devuelve el paquete y las siguientes devuelven `00 00 00 ff …`, el valor por defecto. Abrir y cerrar la interfaz sin leer no lo borra, y el dato sobrevive a procesos distintos. Por eso:
+
+- `serve` lo lee **una sola vez al conectar, antes de escribir nada**, y lo guarda en `device_rgb`.
+- No se puede sondear de forma periódica.
+- Cualquier escritura ajena posterior (una consulta, otra cabecera) lo sustituye; el servicio ya no manda la consulta `0x58` por este motivo.
+- Tras encender el equipo o desconectar el micrófono no hay color que leer (devuelve el valor por defecto).
+- El micrófono guarda el color **con el brillo ya aplicado**, así que el brillo original no se puede separar. La web lo aproxima con el canal mayor (`brillo = max / 255`).
 
 ## Mute de audio (control ALSA del kernel)
 

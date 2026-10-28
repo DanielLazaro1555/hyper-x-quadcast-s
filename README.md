@@ -96,7 +96,7 @@ El color se reenvía cada 55 ms, como hace QuadcastRGB. El brillo no es un coman
 
 | Ruta | Qué hace |
 |---|---|
-| `GET /api/status` | Estado: conectado, error, color, mute del sensor y `ui` (último color y brillo elegidos en la web) |
+| `GET /api/status` | Estado: conectado, error, color enviado, `device_rgb` (color que tenía el micrófono al conectar), mute del sensor y `ui` (último color y brillo elegidos en la web) |
 | `GET /api/audio` | Mute de audio del micrófono: `{"muted": bool}` |
 | `POST /api/audio` | Cuerpo JSON `{"muted": true\|false}`; silencia o reactiva la captura de audio (control ALSA del kernel, sin PipeWire) |
 | `POST /api/light` | Cuerpo JSON `{"color": "#rrggbb", "brightness": 0-100, "ui_color": "#rrggbb"}`. `ui_color` es opcional: el color sin corregir que la web recupera al recargar |
@@ -110,7 +110,7 @@ Un servicio local que controla hardware es un blanco fácil si cualquier página
 
 En desarrollo, Vite hace de proxy de `/api` hacia el servicio, así que el navegador solo ve un origen.
 
-El micrófono no permite **leer** su color (la interfaz de control solo devuelve `00 00 00 ff…`), así que la web no puede preguntárselo. En su lugar, el servicio recuerda el último color y brillo recibidos (`ui`) y la web los recupera al abrirse. Se pierden al reiniciar `serve`.
+Al conectar, `serve` lee una vez el último color que recibió el micrófono (`device_rgb`; ver «Leer el color del micrófono» en `docs/PROTOCOL.md`) y el servicio recuerda además el último color elegido en la web (`ui`). La web, al abrirse, usa `ui` y, si no hay, `device_rgb`. Ambos se pierden al reiniciar `serve`, salvo el color del micrófono, que se vuelve a leer si nadie lo consumió.
 
 Al iniciar `serve`, el servicio abre el USB, consulta el estado actual del mute y escucha cambios del sensor físico. La web refleja el estado y apaga el RGB del visor mientras está muteado; RGB del dispositivo sigue sin enviarse hasta que cambies un control.
 

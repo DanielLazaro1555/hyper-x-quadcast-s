@@ -28,6 +28,15 @@ pub fn color_packet(rgb: [u8; 3]) -> Packet {
     p
 }
 
+/// Color de un paquete de color (`81 RR GG BB` repetido). `None` si el búfer guarda otra
+/// cosa o si las dos copias no coinciden.
+pub fn parse_color_packet(packet: &[u8]) -> Option<[u8; 3]> {
+    match packet {
+        [COLOR_CODE, r, g, b, COLOR_CODE, r2, g2, b2, ..] if (r, g, b) == (r2, g2, b2) => Some([*r, *g, *b]),
+        _ => None,
+    }
+}
+
 /// Valor del evento del sensor (`05 10 XX ...`): `01` = activo, `00` = silenciado.
 pub fn mute_event_value(report: &[u8]) -> Option<u8> {
     match report {
