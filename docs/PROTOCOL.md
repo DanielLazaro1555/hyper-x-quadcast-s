@@ -65,7 +65,7 @@ El sensor táctil de silencio genera **[verificado]**:
 
 - En `hidraw` (interfaz 1): un informe de 8 bytes `05 10 XX 00 00 00 00 00`. **`XX` es el estado absoluto: `01` = micrófono activo (LED superior encendido), `00` = silenciado.** Verificado tocando el sensor: secuencia `01`, `00`, `01`, y tras el último el LED quedó encendido.
 - En `/dev/input/event*` ("Consumer Control"): `BTN_0` (código 256), pulsar y soltar.
-- El sensor silencia **por hardware**: no cambia el interruptor ALSA `Mic Capture Switch` **[verificado]**. Son dos mutes independientes (ver más abajo).
+- El sensor silencia **por hardware**: no cambia el interruptor ALSA `Mic Capture Switch` **[verificado]**. Son dos mutes distintos (ver más abajo), pero el servicio los une en un sentido: cada toque del sensor pone también el audio de software igual que el hardware (`01` activa, `00` silencia), para que la web no contradiga al micrófono. Al revés no se puede: no hay forma conocida de accionar el sensor desde el ordenador.
 
 La consulta HID de función `0x07`, comando `0x58` que describe OpenHyperX **no responde con datos en este micrófono** (`0951:171f`): devuelve `00 00 00 ff …`, sin comando ni ACK **[verificado]**. El servicio ya no la envía. El estado inicial del mute es desconocido hasta el primer toque; el servicio muestra «pendiente» y no lo adivina.
 

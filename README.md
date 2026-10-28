@@ -47,7 +47,7 @@ Abre <http://127.0.0.1:5173/>. Desde ahí puedes:
 - Elegir el color con el selector o con las muestras (hay una fila de colores mezclados).
 - Bajar el brillo.
 - Calibrar los colores mezclados (ver abajo).
-- Ver el estado del sensor de silencio físico y **silenciar o reactivar el audio** con un botón (ver `docs/PROTOCOL.md`).
+- Ver el estado del sensor de silencio físico y **silenciar o reactivar el audio** con un botón (ver `docs/PROTOCOL.md`). El toque físico manda: al tocar el sensor, el botón se pone igual que el micrófono.
 - Cambiar el modelo 3D entre **negro y blanco**.
 - Cambiar entre **modo claro y oscuro**. La elección se recuerda; si no hay ninguna, se sigue la preferencia del sistema.
 - Abrir el medidor de audio.

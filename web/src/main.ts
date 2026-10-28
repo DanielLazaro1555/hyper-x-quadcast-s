@@ -399,10 +399,18 @@ function syncColor(status: DeviceStatus) {
   applyRemote(ui.corrected ? uncorrectColor(hexToRgb(ui.color), store.get()) : ui.color, ui.brightness);
 }
 
+// Último estado del sensor físico visto: cuando cambia, el servicio ya igualó el audio de
+// software, así que se refresca el botón sin esperar al siguiente sondeo de audio.
+let lastHardwareMuted: boolean | null = null;
+
 async function poll() {
   try {
     const status = await getStatus();
     syncColor(status);
+    if (status.muted !== lastHardwareMuted) {
+      lastHardwareMuted = status.muted;
+      void pollAudio();
+    }
     panel.setStatus(describe(status));
     setMuteState(status.muted);
   } catch {

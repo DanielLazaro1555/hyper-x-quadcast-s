@@ -8,6 +8,7 @@ use std::time::Duration;
 
 use serde::Serialize;
 
+use crate::audio;
 use crate::device::Mic;
 
 pub const FRAME_INTERVAL: Duration = Duration::from_millis(55);
@@ -151,6 +152,11 @@ fn run(shared: &Shared) {
                             // El evento lleva el estado absoluto: 01 = activo (LED
                             // encendido), 00 = silenciado. Verificado tocando el sensor.
                             muted = Some(event == 0);
+                            // El toque físico manda: el silencio de audio por software se pone
+                            // igual que el del sensor, para que el botón de la web no quede
+                            // contradiciendo al micrófono. Si falla (sin tarjeta de audio) se
+                            // ignora: el estado del sensor sigue siendo válido.
+                            let _ = audio::set_muted(event == 0);
                         }
                     }
                 }
