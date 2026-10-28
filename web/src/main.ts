@@ -101,7 +101,13 @@ function applyVariant(variant: Variant) {
 // usa una curva de potencia 0,35 (38 % se dibuja como ~71 %) para que no se vea casi apagado. Solo afecta al
 // dibujo 3D; al micrófono se le envía el brillo tal cual.
 function displayRgb(color: string, brightness: number): [number, number, number] {
-  return applyBrightness(color, Math.round(Math.pow(Math.min(Math.max(brightness, 0), 100) / 100, 0.35) * 100));
+  const percent = Math.round(Math.pow(Math.min(Math.max(brightness, 0), 100) / 100, 0.35) * 100);
+  const rgb = applyBrightness(color, 100);
+  // Un LED encendido emite su canal más fuerte a plena intensidad: se conserva el matiz y
+  // el canal mayor se lleva a 255, para que un azul oscuro no se vea apagado en pantalla.
+  const peak = Math.max(...rgb);
+  const vivid = peak === 0 ? rgb : (rgb.map((c) => Math.round((c * 255) / peak)) as [number, number, number]);
+  return vivid.map((c) => Math.floor((c * percent) / 100)) as [number, number, number];
 }
 let currentRgb = displayRgb(store.get().color, store.get().brightness);
 let currentMuted: boolean | null = null;
