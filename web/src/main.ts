@@ -32,6 +32,7 @@ const store = createStore({ color: "#ff0000", brightness: 100, ...loadCalibratio
 const stage = createStage(required("stage"));
 let importedLedMaterials: THREE.MeshBasicMaterial[] = [];
 let ledGlow: THREE.Mesh | null = null;
+let halo: THREE.Sprite | null = null;
 let importedMuteMaterials: THREE.MeshStandardMaterial[] = [];
 
 // El GLB es un solo modelo negro con un único material; la versión blanca se
@@ -118,7 +119,42 @@ const importedGlow = new THREE.PointLight(0xffffff, 0, 4.2);
 importedGlow.position.set(0, 2.15, 0.15);
 stage.scene.add(importedGlow);
 // Cuánto blanco se mezcla en el núcleo del LED (0 = color puro, 1 = blanco).
-const HOT_WHITE = 0.1;
+const HOT_WHITE = 0.04;
+// Opacidad máxima del halo de luz alrededor de la cápsula.
+const HALO_OPACITY = 0.55;
+/** Mancha suave con forma de cápsula (blanca, con alfa): se tiñe con el color del LED. */
+function createHaloTexture(): THREE.CanvasTexture {
+  const w = 128;
+  const h = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  const image = ctx.createImageData(w, h);
+  const halfW = w * 0.2;
+  const halfH = h * 0.3;
+  const spread = w * 0.14;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      // Distancia al rectángulo central; el alfa cae como una gaussiana al alejarse.
+      const dx = Math.max(Math.abs(x - w / 2) - halfW, 0);
+      const dy = Math.max(Math.abs(y - h / 2) - halfH, 0);
+      // La ventana lleva el alfa a 0 en los bordes para que no se vea el cuadro de la textura.
+      const edge = (d: number, size: number) => {
+        const t = Math.min(Math.max(d / (size * 0.35), 0), 1);
+        return t * t * (3 - 2 * t);
+      };
+      const window = edge(Math.min(x, w - 1 - x), w) * edge(Math.min(y, h - 1 - y), h);
+      const alpha = Math.exp(-(dx * dx + dy * dy) / (spread * spread)) * window;
+      const i = (y * w + x) * 4;
+      image.data[i] = image.data[i + 1] = image.data[i + 2] = 255;
+      image.data[i + 3] = Math.round(alpha * 255);
+    }
+  }
+  ctx.putImageData(image, 0, 0);
+  return new THREE.CanvasTexture(canvas);
+}
+
 function setImportedLight(rgb: [number, number, number]) {
   currentRgb = rgb;
   // El QuadCast apaga toda la iluminación de la cápsula mientras está muteado.
@@ -129,6 +165,12 @@ function setImportedLight(rgb: [number, number, number]) {
   importedGlow.intensity = ledEnabled ? Math.max(r, g, b) / 255 * (0.25 + audioLevel * 0.5) : 0;
   // Silenciado: se oculta la luz y a través de la rejilla se ve la espuma.
   if (ledGlow) ledGlow.visible = ledEnabled;
+  if (halo) {
+    halo.visible = ledEnabled;
+    // Mismo matiz, sin blanco: el resplandor aporta la sensación de luz, no un color más claro.
+    halo.material.color.setRGB(r / 255, g / 255, b / 255);
+    halo.material.opacity = HALO_OPACITY * (0.8 + audioLevel * 0.2);
+  }
   importedLedMaterials.forEach((material) => {
     // Sin corrección tonal: así un rojo puro se ve rojo y no un durazno desaturado.
     // El núcleo de un LED encendido se acerca al blanco: se mezcla blanco en proporción al
@@ -221,6 +263,16 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
       glowMesh.position.copy(box.getCenter(new THREE.Vector3()));
       ledGlow = glowMesh;
       stage.scene.add(glowMesh);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: createHaloTexture(),
+        transparent: true,
+        depthWrite: false,
+        toneMapped: false,
+      }));
+      sprite.position.copy(box.getCenter(new THREE.Vector3()));
+      sprite.scale.set(box.max.x - box.min.x, height, 1).multiplyScalar(2.1);
+      halo = sprite;
+      stage.scene.add(sprite);
       return;
     }
     const name = node.name.toLowerCase();
