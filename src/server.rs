@@ -37,6 +37,12 @@ struct LightRequest {
 }
 
 #[derive(Deserialize)]
+struct MixerRequest {
+    id: String,
+    value: i64,
+}
+
+#[derive(Deserialize)]
 struct AudioRequest {
     muted: bool,
 }
@@ -83,6 +89,27 @@ fn handle(request: &mut Request, light: &Light) -> Reply {
 
     match (request.method().clone(), request.url()) {
         (Method::Get, "/api/status") => reply(200, &status()),
+        (Method::Get, "/api/device") => {
+            reply(200, &serde_json::to_string(&audio::info()).unwrap_or_else(|_| "{}".into()))
+        }
+        (Method::Post, "/api/mixer") => {
+            let is_json = header(request, "Content-Type")
+                .is_some_and(|t| t.to_ascii_lowercase().starts_with("application/json"));
+            if !is_json {
+                return error(415, "se espera Content-Type: application/json");
+            }
+            let mut body = String::new();
+            if request.as_reader().take(MAX_BODY).read_to_string(&mut body).is_err() {
+                return error(400, "cuerpo ilegible");
+            }
+            match serde_json::from_str::<MixerRequest>(&body) {
+                Ok(req) => match audio::set_control(&req.id, req.value) {
+                    Ok(()) => reply(200, &serde_json::to_string(&audio::info()).unwrap_or_else(|_| "{}".into())),
+                    Err(msg) => error(400, &msg),
+                },
+                Err(e) => error(400, &format!("JSON inválido: {e}")),
+            }
+        }
         (Method::Get, "/api/audio") => audio_reply(audio::is_muted()),
         (Method::Post, "/api/audio") => {
             let is_json = header(request, "Content-Type")

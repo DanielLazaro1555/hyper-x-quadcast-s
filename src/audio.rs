@@ -9,6 +9,9 @@
 //! No usa PipeWire, PulseAudio ni `alsa-lib`: solo dos `ioctl`.
 
 use std::fs::{self, File, OpenOptions};
+use std::path::Path;
+
+use serde::Serialize;
 use std::os::fd::AsRawFd;
 
 const VID: &str = "0951";
@@ -78,17 +81,17 @@ fn open_control() -> Result<File, String> {
         .map_err(|e| format!("no se pudo abrir {path}: {e}"))
 }
 
-fn element() -> ElemValue {
+fn element(name: &str) -> ElemValue {
     let mut id = ElemId { numid: 0, iface: SNDRV_CTL_ELEM_IFACE_MIXER, device: 0, subdevice: 0, name: [0; 44], index: 0 };
-    id.name[..CONTROL_NAME.len()].copy_from_slice(CONTROL_NAME.as_bytes());
+    id.name[..name.len()].copy_from_slice(name.as_bytes());
     ElemValue { id, indirect: 0, value: [0; 128], reserved: [0; 128] }
 }
 
-fn ioctl(file: &File, request: libc::c_ulong, elem: &mut ElemValue) -> Result<(), String> {
+fn ioctl(file: &File, request: libc::c_ulong, elem: &mut ElemValue, name: &str) -> Result<(), String> {
     // SAFETY: `elem` es un `snd_ctl_elem_value` válido y vivo durante la llamada.
     let rc = unsafe { libc::ioctl(file.as_raw_fd(), request as _, elem as *mut ElemValue) };
     if rc < 0 {
-        return Err(format!("falló el control '{CONTROL_NAME}': {}", std::io::Error::last_os_error()));
+        return Err(format!("falló el control '{name}': {}", std::io::Error::last_os_error()));
     }
     Ok(())
 }
@@ -96,15 +99,178 @@ fn ioctl(file: &File, request: libc::c_ulong, elem: &mut ElemValue) -> Result<()
 /// El control ALSA es un *switch* de captura: `1` = sonido pasa, `0` = silenciado.
 pub fn is_muted() -> Result<bool, String> {
     let file = open_control()?;
-    let mut elem = element();
-    ioctl(&file, SNDRV_CTL_IOCTL_ELEM_READ, &mut elem)?;
+    let mut elem = element(CONTROL_NAME);
+    ioctl(&file, SNDRV_CTL_IOCTL_ELEM_READ, &mut elem, CONTROL_NAME)?;
     Ok(elem.value[0] == 0)
 }
 
 pub fn set_muted(muted: bool) -> Result<bool, String> {
     let file = open_control()?;
-    let mut elem = element();
+    let mut elem = element(CONTROL_NAME);
     elem.value[0] = if muted { 0 } else { 1 };
-    ioctl(&file, SNDRV_CTL_IOCTL_ELEM_WRITE, &mut elem)?;
+    ioctl(&file, SNDRV_CTL_IOCTL_ELEM_WRITE, &mut elem, CONTROL_NAME)?;
     is_muted()
+}
+
+/// Un control del mezclador que expone `snd-usb-audio` para este micrófono. Los rangos y los
+/// decibelios salen de `amixer -c N contents` en el equipo de pruebas (un decibelio por paso).
+struct ControlSpec {
+    id: &'static str,
+    name: &'static str,
+    kind: &'static str,
+    channels: usize,
+    min: i64,
+    max: i64,
+    db_min: i64,
+}
+
+const CONTROLS: [ControlSpec; 6] = [
+    ControlSpec { id: "capture_gain", name: "Mic Capture Volume", kind: "volume", channels: 2, min: 0, max: 15, db_min: -8 },
+    ControlSpec { id: "capture_switch", name: "Mic Capture Switch", kind: "switch", channels: 1, min: 0, max: 1, db_min: 0 },
+    ControlSpec { id: "monitor_volume", name: "Mic Playback Volume", kind: "volume", channels: 2, min: 0, max: 36, db_min: -30 },
+    ControlSpec { id: "monitor_switch", name: "Mic Playback Switch", kind: "switch", channels: 1, min: 0, max: 1, db_min: 0 },
+    ControlSpec { id: "headphone_volume", name: "Speaker Playback Volume", kind: "volume", channels: 2, min: 0, max: 31, db_min: -40 },
+    ControlSpec { id: "headphone_switch", name: "Speaker Playback Switch", kind: "switch", channels: 1, min: 0, max: 1, db_min: 0 },
+];
+
+#[derive(Serialize)]
+pub struct ControlState {
+    id: &'static str,
+    name: &'static str,
+    kind: &'static str,
+    values: Vec<i64>,
+    min: i64,
+    max: i64,
+    /// Decibelios del valor mínimo; cada paso suma 1 dB. Solo en los volúmenes.
+    db_min: Option<i64>,
+}
+
+/// Estado actual de todos los controles del mezclador del micrófono.
+pub fn mixer() -> Result<Vec<ControlState>, String> {
+    let file = open_control()?;
+    CONTROLS
+        .iter()
+        .map(|c| {
+            let mut elem = element(c.name);
+            ioctl(&file, SNDRV_CTL_IOCTL_ELEM_READ, &mut elem, c.name)?;
+            Ok(ControlState {
+                id: c.id,
+                name: c.name,
+                kind: c.kind,
+                values: elem.value[..c.channels].iter().map(|v| *v as i64).collect(),
+                min: c.min,
+                max: c.max,
+                db_min: (c.kind == "volume").then_some(c.db_min),
+            })
+        })
+        .collect()
+}
+
+/// Cambia un control por su `id`. Un volumen pone todos sus canales al mismo valor.
+pub fn set_control(id: &str, value: i64) -> Result<(), String> {
+    let spec = CONTROLS.iter().find(|c| c.id == id).ok_or_else(|| format!("control desconocido '{id}'"))?;
+    if value < spec.min || value > spec.max {
+        return Err(format!("'{id}' va de {} a {}", spec.min, spec.max));
+    }
+    let file = open_control()?;
+    let mut elem = element(spec.name);
+    for v in elem.value[..spec.channels].iter_mut() {
+        *v = value as libc::c_long;
+    }
+    ioctl(&file, SNDRV_CTL_IOCTL_ELEM_WRITE, &mut elem, spec.name)
+}
+
+/// Formato de un sentido (`Capture` o `Playback`) tal como lo declara el micrófono por USB y
+/// lo resume el kernel en `/proc/asound/cardN/stream0`.
+#[derive(Serialize, Default)]
+pub struct StreamFormat {
+    format: String,
+    channels: u32,
+    bits: u32,
+    rates: Vec<u32>,
+}
+
+fn parse_stream(text: &str, section: &str) -> Option<StreamFormat> {
+    let mut lines = text.lines().skip_while(|l| l.trim() != format!("{section}:"));
+    lines.next()?;
+    let mut f = StreamFormat::default();
+    for line in lines {
+        if !line.starts_with(' ') {
+            break; // empieza otra sección
+        }
+        let line = line.trim();
+        if let Some(v) = line.strip_prefix("Format:") {
+            f.format = v.trim().to_string();
+        } else if let Some(v) = line.strip_prefix("Channels:") {
+            f.channels = v.trim().parse().unwrap_or(0);
+        } else if let Some(v) = line.strip_prefix("Bits:") {
+            f.bits = v.trim().parse().unwrap_or(0);
+        } else if let Some(v) = line.strip_prefix("Rates:") {
+            f.rates = v.split(',').filter_map(|r| r.trim().parse().ok()).collect();
+        }
+    }
+    (f.channels > 0).then_some(f)
+}
+
+#[derive(Serialize)]
+pub struct UsbDevice {
+    id: String,
+    product: String,
+    manufacturer: String,
+    version: String,
+    speed_mbps: String,
+    role: &'static str,
+}
+
+fn read_trim(path: &Path) -> String {
+    fs::read_to_string(path).map(|s| s.trim().to_string()).unwrap_or_default()
+}
+
+/// Los dos dispositivos USB del micrófono: el RGB con el sensor (171f) y el audio (171d).
+pub fn usb_devices() -> Vec<UsbDevice> {
+    let mut found = Vec::new();
+    let Ok(entries) = fs::read_dir("/sys/bus/usb/devices") else { return found };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if read_trim(&path.join("idVendor")) != VID {
+            continue;
+        }
+        let pid = read_trim(&path.join("idProduct"));
+        let role = match pid.as_str() {
+            "171f" => "RGB y sensor táctil (HID)",
+            p if p == AUDIO_PID => "Audio (USB Audio Class 1.0 y HID)",
+            _ => continue,
+        };
+        found.push(UsbDevice {
+            id: format!("{VID}:{pid}"),
+            product: read_trim(&path.join("product")),
+            manufacturer: read_trim(&path.join("manufacturer")),
+            version: read_trim(&path.join("bcdDevice")),
+            speed_mbps: read_trim(&path.join("speed")),
+            role,
+        });
+    }
+    found.sort_by(|a, b| a.id.cmp(&b.id));
+    found
+}
+
+#[derive(Serialize)]
+pub struct AudioInfo {
+    card: Option<u32>,
+    capture: Option<StreamFormat>,
+    playback: Option<StreamFormat>,
+    controls: Vec<ControlState>,
+    usb: Vec<UsbDevice>,
+}
+
+pub fn info() -> AudioInfo {
+    let card = find_card().ok();
+    let stream = card.and_then(|c| fs::read_to_string(format!("/proc/asound/card{c}/stream0")).ok());
+    AudioInfo {
+        card,
+        capture: stream.as_deref().and_then(|t| parse_stream(t, "Capture")),
+        playback: stream.as_deref().and_then(|t| parse_stream(t, "Playback")),
+        controls: mixer().unwrap_or_default(),
+        usb: usb_devices(),
+    }
 }
