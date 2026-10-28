@@ -3,7 +3,7 @@ import { getAudioMuted, getStatus, setAudioMuted, setLight, type DeviceStatus } 
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { createStage } from "./scene/stage";
-import { applyBrightness, correctColor, createStore, loadCalibration, saveCalibration } from "./state";
+import { applyBrightness, correctColor, createStore, loadCalibration, saveCalibration, uncorrectColor } from "./state";
 import { mountMeter } from "./ui/meter";
 import { mountPanel } from "./ui/panel";
 
@@ -110,7 +110,8 @@ function displayRgb(color: string, brightness: number): [number, number, number]
   const vivid = peak === 0 ? rgb : (rgb.map((c) => Math.round((c * 255) / peak)) as [number, number, number]);
   return vivid.map((c) => Math.floor((c * percent) / 100)) as [number, number, number];
 }
-let currentRgb = displayRgb(store.get().color, store.get().brightness);
+// La vista 3D muestra el color ya corregido: el mismo que recibe el micrófono real.
+let currentRgb = displayRgb(correctColor(store.get().color, store.get()), store.get().brightness);
 let currentMuted: boolean | null = null;
 let audioLevel = 0;
 let audioSyncActive = false;
@@ -289,8 +290,8 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
 
 const panel = mountPanel(required("controls"), store);
 mountMeter(required("meter"), setAudioLevel);
-store.subscribe(({ color, brightness }) => {
-  const rgb = displayRgb(color, brightness);
+store.subscribe((s) => {
+  const rgb = displayRgb(correctColor(s.color, s), s.brightness);
   setImportedLight(rgb);
 });
 
@@ -388,8 +389,9 @@ function fromDeviceColor(rgb: [number, number, number] | null): { color: string;
   if (!rgb) return null;
   const max = Math.max(...rgb);
   if (max === 0) return null;
-  const hex = rgb.map((c) => Math.round((c * 255) / max).toString(16).padStart(2, "0")).join("");
-  return { color: `#${hex}`, brightness: Math.max(1, Math.round((max / 255) * 100)) };
+  // El micrófono guarda el color ya corregido: se normaliza y se deshace la calibración.
+  const normalized = rgb.map((c) => Math.round((c * 255) / max)) as [number, number, number];
+  return { color: uncorrectColor(normalized, store.get()), brightness: Math.max(1, Math.round((max / 255) * 100)) };
 }
 let colorRestored = false;
 async function poll() {

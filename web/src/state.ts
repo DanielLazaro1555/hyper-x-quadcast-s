@@ -38,6 +38,16 @@ export function createStore(initial: LightState) {
 
 export type Store = ReturnType<typeof createStore>;
 
+/** Inverso de `correctColor`: del color que tiene el micrófono al que se eligió en la web. */
+export function uncorrectColor(rgb: [number, number, number], { gamma, gains }: Calibration): string {
+  const out = rgb.map((c, i) => {
+    const gain = Math.max(gains[i], 1) / 100;
+    const v = Math.round(255 * Math.pow(Math.min(c / 255 / gain, 1), 1 / gamma));
+    return Math.min(255, Math.max(0, v)).toString(16).padStart(2, "0");
+  });
+  return `#${out.join("")}`;
+}
+
 function channels(hex: string): [number, number, number] {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];

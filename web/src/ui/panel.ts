@@ -211,7 +211,7 @@ export function mountPanel(root: HTMLElement, store: Store) {
     "padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#f8fafc;color:var(--text);cursor:pointer;font:inherit;font-size:12px;";
   reset.addEventListener("click", () => store.set({ ...NEUTRAL_CALIBRATION }));
 
-  const hint = el("p", {}, "Ajusta mirando el micrófono real: la vista 3D siempre muestra el color sin corregir.");
+  const hint = el("p", {}, "Ajusta mirando el micrófono real: la vista 3D muestra el color ya corregido, igual que el que recibe el micrófono.");
   hint.style.cssText = "color:var(--muted);margin:0 0 14px;font-size:12px;";
 
   const status = el("p", {}, "Comprobando el servicio local...");
