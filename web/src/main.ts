@@ -30,7 +30,7 @@ function describe(s: DeviceStatus): string {
 const store = createStore({ color: "#ff0000", brightness: 100, ...loadCalibration() });
 
 const stage = createStage(required("stage"));
-let importedLedMaterials: THREE.MeshStandardMaterial[] = [];
+let importedLedMaterials: THREE.MeshBasicMaterial[] = [];
 let importedMuteMaterials: THREE.MeshStandardMaterial[] = [];
 let currentRgb = applyBrightness(store.get().color, store.get().brightness);
 let currentMuted: boolean | null = null;
@@ -38,18 +38,19 @@ let audioLevel = 0;
 let audioSyncActive = false;
 let lastHardwareSync = 0;
 const importedGlow = new THREE.PointLight(0xffffff, 0, 4.2);
-importedGlow.position.set(0, 1.55, 0.25);
+importedGlow.position.set(0, 2.15, 0.15);
 stage.scene.add(importedGlow);
 function setImportedLight(rgb: [number, number, number]) {
   currentRgb = rgb;
   // El QuadCast apaga toda la iluminación de la cápsula mientras está muteado.
   const ledEnabled = currentMuted !== true;
+  const level = Math.min(1, 0.8 + audioLevel * 0.3);
   const [r, g, b] = rgb;
   importedGlow.color.setRGB(ledEnabled ? r / 255 : 0, ledEnabled ? g / 255 : 0, ledEnabled ? b / 255 : 0);
-  importedGlow.intensity = ledEnabled ? Math.max(r, g, b) / 255 * (0.55 + audioLevel * 0.9) : 0;
+  importedGlow.intensity = ledEnabled ? Math.max(r, g, b) / 255 * (0.25 + audioLevel * 0.5) : 0;
   importedLedMaterials.forEach((material) => {
-    material.emissive.setRGB(ledEnabled ? r / 255 : 0, ledEnabled ? g / 255 : 0, ledEnabled ? b / 255 : 0);
-    material.emissiveIntensity = ledEnabled ? 3.2 + audioLevel * 2.4 : 0;
+    // Sin corrección tonal: así un rojo puro se ve rojo y no un durazno desaturado.
+    material.color.setRGB(ledEnabled ? r / 255 * level : 0, ledEnabled ? g / 255 * level : 0, ledEnabled ? b / 255 * level : 0);
   });
 }
 
@@ -68,50 +69,6 @@ function setMuteState(muted: boolean | null) {
   indicator.textContent = state === null ? "Mute pendiente · toca el sensor" : state ? "Micrófono silenciado" : "Micrófono activo";
 }
 
-function splitLedZones(source: THREE.BufferGeometry): THREE.BufferGeometry {
-  const expanded = source.index ? source.toNonIndexed() : source.clone();
-  const position = expanded.getAttribute("position");
-  const attributes = Object.entries(expanded.attributes);
-  const zones = [new Map<string, number[]>(), new Map<string, number[]>()];
-  for (const zone of zones) for (const [name] of attributes) zone.set(name, []);
-
-  for (let i = 0; i < position.count; i += 3) {
-    const centerY = (position.getY(i) + position.getY(i + 1) + position.getY(i + 2)) / 3;
-    const zone = zones[centerY >= 0 ? 0 : 1];
-    for (const [name, attribute] of attributes) {
-      const output = zone.get(name)!;
-      for (let vertex = i; vertex < i + 3; vertex++) {
-        for (let component = 0; component < attribute.itemSize; component++) {
-          output.push(attribute.array[vertex * attribute.itemSize + component]);
-        }
-      }
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  let offset = 0;
-  for (let zoneIndex = 0; zoneIndex < zones.length; zoneIndex++) {
-    const zone = zones[zoneIndex];
-    const count = zone.get("position")?.length ?? 0;
-    for (const [name, attribute] of attributes) {
-      geometry.setAttribute(name, new THREE.Float32BufferAttribute(zone.get(name)!, attribute.itemSize, attribute.normalized));
-    }
-    if (zoneIndex === 0) {
-      // Add both halves to the same non-indexed geometry in material order.
-      offset = count;
-    } else {
-      for (const [name, attribute] of attributes) {
-        const merged = [...(zones[0].get(name) ?? []), ...(zone.get(name) ?? [])];
-        geometry.setAttribute(name, new THREE.Float32BufferAttribute(merged, attribute.itemSize, attribute.normalized));
-      }
-    }
-    geometry.addGroup(zoneIndex === 0 ? 0 : offset, count, zoneIndex);
-  }
-  geometry.computeBoundingBox();
-  geometry.computeBoundingSphere();
-  if (expanded !== source) expanded.dispose();
-  return geometry;
-}
 function setAudioLevel(level: number, active: boolean) {
   audioLevel = THREE.MathUtils.clamp(level, 0, 1);
   setImportedLight(currentRgb);
@@ -160,20 +117,27 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
       return;
     }
     if (node.name.toLowerCase().includes("net")) {
-      node.geometry = splitLedZones(node.geometry);
-      const makeZone = () => {
-        const led = new THREE.MeshStandardMaterial({
-          color: 0x090b0f,
-          metalness: 0.58,
-          roughness: 0.36,
-          emissive: 0xffffff,
-          emissiveIntensity: 3.2,
-          side: THREE.DoubleSide,
-        });
-        importedLedMaterials.push(led);
-        return led;
-      };
-      node.material = [makeZone(), makeZone()];
+      // La malla es metal oscuro: la luz del LED se ve a través de sus agujeros.
+      node.material = new THREE.MeshStandardMaterial({ color: 0x0b0c0f, metalness: 0.75, roughness: 0.38, side: THREE.DoubleSide });
+      model.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(node);
+      // Justo por fuera de la espuma interior (radio ≈ 0.317) y por dentro de la malla.
+      const radius = (box.max.x - box.min.x) / 2 * 0.99;
+      const height = box.max.y - box.min.y;
+      const glow = new THREE.CylinderGeometry(radius, radius, height, 48, 24, true);
+      // Más intenso en los extremos, donde está el anillo LED, y más tenue en medio.
+      const position = glow.getAttribute("position");
+      const shade = new Float32Array(position.count * 3);
+      for (let i = 0; i < position.count; i++) {
+        const t = Math.abs(position.getY(i) / (height / 2));
+        shade.fill(0.55 + 0.45 * t * t, i * 3, i * 3 + 3);
+      }
+      glow.setAttribute("color", new THREE.BufferAttribute(shade, 3));
+      const led = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, toneMapped: false });
+      importedLedMaterials.push(led);
+      const glowMesh = new THREE.Mesh(glow, led);
+      glowMesh.position.copy(box.getCenter(new THREE.Vector3()));
+      stage.scene.add(glowMesh);
       return;
     }
     const original = Array.isArray(node.material) ? node.material : [node.material];
