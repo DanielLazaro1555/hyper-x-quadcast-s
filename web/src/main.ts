@@ -48,7 +48,7 @@ const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; mu
     parts: {
       body: { color: 0x17191d, metalness: 0.58, roughness: 0.42 },
       net: { color: 0x0b0c0f, metalness: 0.75, roughness: 0.38 },
-      thread: { color: 0x421c22, metalness: 0.58, roughness: 0.42 },
+      thread: { color: 0xeceff2, metalness: 0.1, roughness: 0.6 },
     },
     muteOff: 0x111316,
   },
