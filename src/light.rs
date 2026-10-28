@@ -14,6 +14,14 @@ pub const FRAME_INTERVAL: Duration = Duration::from_millis(55);
 const RETRY_INTERVAL: Duration = Duration::from_secs(1);
 const MUTE_STATUS_INTERVAL: Duration = Duration::from_millis(400);
 
+/// Último color elegido en la web, sin corregir. El micrófono no permite leer su
+/// color, así que esto es lo que la web recupera al abrirse o recargarse.
+#[derive(Clone, Debug, Serialize)]
+pub struct UiColor {
+    pub color: String,
+    pub brightness: u8,
+}
+
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct Status {
     pub connected: bool,
@@ -21,12 +29,15 @@ pub struct Status {
     pub rgb: Option<[u8; 3]>,
     /// `None` until the HID status query returns a valid report.
     pub muted: Option<bool>,
+    /// Lo rellena `Light::status`, no el hilo del micrófono.
+    pub ui: Option<UiColor>,
 }
 
 #[derive(Default)]
 struct Shared {
     target: Mutex<Option<[u8; 3]>>,
     status: Mutex<Status>,
+    ui: Mutex<Option<UiColor>>,
     running: AtomicBool,
     /// Despierta al hilo cuando llega una orden nueva, en vez de esperar al
     /// siguiente fotograma.
@@ -57,8 +68,14 @@ impl Light {
         self.shared.wake.notify_one();
     }
 
+    pub fn set_ui(&self, ui: UiColor) {
+        *lock(&self.shared.ui) = Some(ui);
+    }
+
     pub fn status(&self) -> Status {
-        lock(&self.shared.status).clone()
+        let mut status = lock(&self.shared.status).clone();
+        status.ui = lock(&self.shared.ui).clone();
+        status
     }
 }
 
@@ -104,6 +121,7 @@ fn run(shared: &Shared) {
                         error: Some(error),
                         rgb: *lock(&shared.target),
                         muted,
+                        ui: None,
                     });
                     thread::sleep(RETRY_INTERVAL);
                     continue;
@@ -139,7 +157,7 @@ fn run(shared: &Shared) {
                         next_mute_status = Instant::now() + MUTE_STATUS_INTERVAL;
                     }
                 }
-                set_status(shared, Status { connected: true, error: None, rgb: target, muted });
+                set_status(shared, Status { connected: true, error: None, rgb: target, muted, ui: None });
                 if target.is_some() {
                     wait_next_frame(shared);
                 }
@@ -147,7 +165,7 @@ fn run(shared: &Shared) {
             Err(error) => {
                 mic = None; // libera las interfaces antes de reintentar
                 muted = None;
-                set_status(shared, Status { connected: false, error: Some(error), rgb: target, muted });
+                set_status(shared, Status { connected: false, error: Some(error), rgb: target, muted, ui: None });
                 thread::sleep(RETRY_INTERVAL);
             }
         }

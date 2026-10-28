@@ -230,6 +230,8 @@ store.subscribe(({ color, brightness }) => {
 interface Pending {
   color: string;
   brightness: number;
+  /** Color elegido sin corregir; el servicio lo guarda para recuperarlo al recargar. */
+  uiColor?: string;
 }
 let inFlight = false;
 let pending: Pending | null = null;
@@ -240,7 +242,7 @@ function push(value: Pending) {
     return;
   }
   inFlight = true;
-  setLight(value.color, value.brightness)
+  setLight(value.color, value.brightness, value.uiColor)
     .then((s) => {
       panel.setStatus(describe(s));
       setMuteState(s.muted);
@@ -255,14 +257,17 @@ function push(value: Pending) {
 }
 
 let first = true;
+// Al recuperar el color guardado por el servicio no hay que reenviarlo al micrófono.
+let restoring = false;
 store.subscribe((s) => {
   saveCalibration({ gamma: s.gamma, gains: s.gains });
   if (first) {
     first = false;
     return;
   }
+  if (restoring) return;
   // Al micrófono va el color corregido; la vista 3D usa el original.
-  push({ color: correctColor(s.color, s), brightness: s.brightness });
+  push({ color: correctColor(s.color, s), brightness: s.brightness, uiColor: s.color });
 });
 
 const variantButton = required<HTMLButtonElement>("variant");
@@ -306,9 +311,20 @@ async function pollAudio() {
   renderAudioButton();
 }
 
+// El micrófono no permite leer su color: al abrir la web se recupera el último que
+// el servicio recibió, para no arrancar siempre en rojo. Solo se hace una vez.
+let colorRestored = false;
 async function poll() {
   try {
     const status = await getStatus();
+    if (!colorRestored) {
+      colorRestored = true;
+      if (status.ui) {
+        restoring = true;
+        store.set({ color: status.ui.color, brightness: status.ui.brightness });
+        restoring = false;
+      }
+    }
     panel.setStatus(describe(status));
     setMuteState(status.muted);
   } catch {

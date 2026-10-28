@@ -15,7 +15,7 @@ use serde::Deserialize;
 use tiny_http::{Header, Method, Request, Response, Server};
 
 use crate::audio;
-use crate::light::Light;
+use crate::light::{Light, UiColor};
 use crate::protocol;
 
 pub const PORT: u16 = 7878;
@@ -28,6 +28,9 @@ const MAX_BODY: u64 = 1024;
 struct LightRequest {
     color: String,
     brightness: u8,
+    /// Color elegido en la web antes de la corrección de gamma y ganancia.
+    #[serde(default)]
+    ui_color: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -112,6 +115,9 @@ fn handle(request: &mut Request, light: &Light) -> Reply {
             }
             match protocol::parse_hex_color(&req.color) {
                 Ok(rgb) => {
+                    if let Some(ui) = req.ui_color.as_deref().filter(|c| protocol::parse_hex_color(c).is_ok()) {
+                        light.set_ui(UiColor { color: ui.to_string(), brightness: req.brightness });
+                    }
                     light.set(protocol::apply_brightness(rgb, req.brightness));
                     reply(200, &status())
                 }

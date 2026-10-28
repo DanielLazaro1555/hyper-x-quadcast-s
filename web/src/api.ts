@@ -6,6 +6,8 @@ export interface DeviceStatus {
   error: string | null;
   rgb: [number, number, number] | null;
   muted: boolean | null;
+  /** Último color elegido en la web (sin corregir); el micrófono no permite leer el suyo. */
+  ui: { color: string; brightness: number } | null;
 }
 
 async function parse(res: Response): Promise<DeviceStatus> {
@@ -18,12 +20,12 @@ export async function getStatus(): Promise<DeviceStatus> {
   return parse(await fetch("/api/status"));
 }
 
-export async function setLight(color: string, brightness: number): Promise<DeviceStatus> {
+export async function setLight(color: string, brightness: number, uiColor?: string): Promise<DeviceStatus> {
   return parse(
     await fetch("/api/light", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ color, brightness }),
+      body: JSON.stringify({ color, brightness, ui_color: uiColor }),
     }),
   );
 }
