@@ -98,10 +98,10 @@ function applyVariant(variant: Variant) {
   setMuteState(currentMuted);
 }
 // En pantalla, el brillo de un LED real se percibe más alto que en proporción lineal: se
-// usa una curva de raíz cuadrada para que 38 % no se vea casi apagado. Solo afecta al
+// usa una curva de potencia 0,35 (38 % se dibuja como ~71 %) para que no se vea casi apagado. Solo afecta al
 // dibujo 3D; al micrófono se le envía el brillo tal cual.
 function displayRgb(color: string, brightness: number): [number, number, number] {
-  return applyBrightness(color, Math.round(Math.sqrt(Math.min(Math.max(brightness, 0), 100) / 100) * 100));
+  return applyBrightness(color, Math.round(Math.pow(Math.min(Math.max(brightness, 0), 100) / 100, 0.35) * 100));
 }
 let currentRgb = displayRgb(store.get().color, store.get().brightness);
 let currentMuted: boolean | null = null;
@@ -115,7 +115,7 @@ function setImportedLight(rgb: [number, number, number]) {
   currentRgb = rgb;
   // El QuadCast apaga toda la iluminación de la cápsula mientras está muteado.
   const ledEnabled = currentMuted !== true;
-  const level = 0.9 + audioLevel * 0.1;
+  const level = 1;
   const [r, g, b] = rgb;
   importedGlow.color.setRGB(ledEnabled ? r / 255 : 0, ledEnabled ? g / 255 : 0, ledEnabled ? b / 255 : 0);
   importedGlow.intensity = ledEnabled ? Math.max(r, g, b) / 255 * (0.25 + audioLevel * 0.5) : 0;
@@ -200,7 +200,7 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
       const shade = new Float32Array(position.count * 3);
       for (let i = 0; i < position.count; i++) {
         const t = Math.abs(position.getY(i) / (height / 2));
-        shade.fill(0.8 + 0.2 * t * t, i * 3, i * 3 + 3);
+        shade.fill(0.9 + 0.1 * t * t, i * 3, i * 3 + 3);
       }
       glow.setAttribute("color", new THREE.BufferAttribute(shade, 3));
       const led = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, toneMapped: false });
