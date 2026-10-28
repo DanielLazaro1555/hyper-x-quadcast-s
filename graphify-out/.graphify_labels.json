@@ -1,16 +1,1 @@
-{
-  "0": "main.ts",
-  "1": "device.rs",
-  "2": "Light",
-  "3": "protocol.rs",
-  "4": "ui/meter.ts",
-  "5": "package.json",
-  "6": "server.rs",
-  "7": "main.rs",
-  "8": "compilerOptions",
-  "9": "panel.ts",
-  "10": "Unknown mapping for mute report state byte",
-  "11": "quadcast-s",
-  "12": "Créditos de recursos",
-  "13": "Modelo 3D del QuadCast S"
-}
+{"0": "Cliente web y estado", "1": "Acceso USB (device.rs)", "2": "Hilo de luz y lectura de color", "3": "Protocolo USB documentado", "4": "Interfaz web y documentación", "5": "Estado, color y calibración", "6": "Mute de audio por ALSA", "7": "API local y seguridad", "8": "Medidor de audio", "9": "Dependencias web", "10": "Línea de comandos", "11": "Configuración TypeScript", "12": "Créditos de recursos", "13": "Paquete Cargo", "14": "README principal"}
