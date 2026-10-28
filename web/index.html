@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuadCast S</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0e1014;
+        --panel: #171a21;
+        --line: #2a2f3a;
+        --text: #e6e9ef;
+        --muted: #8b93a3;
+        --accent: #6ea8ff;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+        font: 14px/1.5 system-ui, sans-serif; }
+      #app { display: grid; grid-template-columns: 1fr 320px; height: 100%; }
+      #stage { position: relative; min-width: 0; }
+      #stage canvas { display: block; width: 100%; height: 100%; }
+      #panel { background: var(--panel); border-left: 1px solid var(--line); padding: 20px;
+        overflow-y: auto; }
+      @media (max-width: 720px) {
+        #app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+        #panel { border-left: 0; border-top: 1px solid var(--line); padding: 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage"></div>
+      <aside id="panel">
+        <div id="controls"></div>
+        <div id="meter"></div>
+      </aside>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+[package]
+name = "quadcast-s"
+version = "0.1.0"
+edition = "2021"
+description = "Control del HyperX QuadCast S en Linux (RGB y eventos de silencio)"
+license = "MIT"
+
+[dependencies]
+rusb = "0.9"
+ctrlc = "3"
+tiny_http = "0.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

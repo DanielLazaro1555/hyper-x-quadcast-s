@@ -1,0 +1,27 @@
+/** Cliente del servicio local (`quadcast-s serve`). */
+
+export interface DeviceStatus {
+  connected: boolean;
+  error: string | null;
+  rgb: [number, number, number] | null;
+}
+
+async function parse(res: Response): Promise<DeviceStatus> {
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error ?? `error HTTP ${res.status}`);
+  return body as DeviceStatus;
+}
+
+export async function getStatus(): Promise<DeviceStatus> {
+  return parse(await fetch("/api/status"));
+}
+
+export async function setLight(color: string, brightness: number): Promise<DeviceStatus> {
+  return parse(
+    await fetch("/api/light", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ color, brightness }),
+    }),
+  );
+}
