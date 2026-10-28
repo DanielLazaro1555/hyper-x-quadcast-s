@@ -109,17 +109,18 @@ function setImportedLight(rgb: [number, number, number]) {
     // Sin corrección tonal: así un rojo puro se ve rojo y no un durazno desaturado.
     material.color.setRGB(ledEnabled ? r / 255 * level : 0, ledEnabled ? g / 255 * level : 0, ledEnabled ? b / 255 * level : 0);
   });
+  // La tapa del sensor táctil se ilumina con el color RGB mientras el micrófono
+  // está activo (o sin saberlo todavía), y se apaga al silenciarlo.
+  importedMuteMaterials.forEach((material) => {
+    material.color.set(VARIANTS[currentVariant].muteOff);
+    material.emissive.setRGB(ledEnabled ? r / 255 : 0, ledEnabled ? g / 255 : 0, ledEnabled ? b / 255 : 0);
+    material.emissiveIntensity = ledEnabled ? 1.6 : 0;
+  });
 }
 
 function setMuteState(muted: boolean | null) {
   const state = typeof muted === "boolean" ? muted : null;
   currentMuted = state;
-  importedMuteMaterials.forEach((material) => {
-    const active = state === false;
-    material.color.set(active ? 0xe9edf2 : VARIANTS[currentVariant].muteOff);
-    material.emissive.set(active ? 0xffffff : 0x000000);
-    material.emissiveIntensity = active ? 2.3 : 0;
-  });
   setImportedLight(currentRgb);
   const indicator = required<HTMLDivElement>("mute-status");
   indicator.dataset.state = state === null ? "unknown" : state ? "muted" : "active";
