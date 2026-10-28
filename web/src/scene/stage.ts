@@ -27,6 +27,8 @@ const PALETTE: Record<Theme, { background: number; floor: number; platform: numb
 export function createStage(container: HTMLElement): Stage {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -55,6 +57,18 @@ export function createStage(container: HTMLElement): Stage {
   scene.add(hemisphere);
   const key = new THREE.DirectionalLight(0xfff1dc, 3.2);
   key.position.set(3, 6, 4);
+  // Sombras proyectadas: marcan los aros, la suspensión y la rejilla sobre el cuerpo.
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.left = -2;
+  key.shadow.camera.right = 2;
+  key.shadow.camera.top = 4;
+  key.shadow.camera.bottom = -1;
+  key.shadow.camera.near = 1;
+  key.shadow.camera.far = 16;
+  key.shadow.bias = -0.0004;
+  key.shadow.normalBias = 0.02;
+  key.shadow.radius = 3;
   scene.add(key);
   const fill = new THREE.DirectionalLight(0x8ab8ff, 1.7);
   fill.position.set(-4, 3, 2);
@@ -66,11 +80,13 @@ export function createStage(container: HTMLElement): Stage {
 
   const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xe8edf3, metalness: 0.08, roughness: 0.84 });
   const floor = new THREE.Mesh(new THREE.CircleGeometry(18, 96), floorMaterial);
+  floor.receiveShadow = true;
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.01;
   scene.add(floor);
   const platformMaterial = new THREE.MeshStandardMaterial({ color: 0xd9e0e9, metalness: 0.16, roughness: 0.58 });
   const platform = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.55, 0.045, 96), platformMaterial);
+  platform.receiveShadow = true;
   platform.position.y = -0.08;
   scene.add(platform);
   const accentMaterial = new THREE.MeshBasicMaterial({ color: 0xa8b5c7, transparent: true, opacity: 0.75 });

@@ -61,14 +61,14 @@ const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; mu
   white: {
     label: "Blanco",
     parts: {
-      body: { color: 0xe4e0d8, metalness: 0.05, roughness: 0.5 },
-      net: { color: 0xaaa69e, metalness: 0.4, roughness: 0.45 },
-      thread: { color: 0xb4b0a8, metalness: 0.05, roughness: 0.6 },
+      body: { color: 0xf4f5f7, metalness: 0.1, roughness: 0.45 },
+      net: { color: 0xcfd3d8, metalness: 0.4, roughness: 0.42 },
+      thread: { color: 0xe3e5e8, metalness: 0.05, roughness: 0.6 },
       foam: FOAM,
     },
     muteOff: 0xc4c9d0,
     // Menos luz difusa y más exposición: las sombras marcan los detalles sin teñir de gris.
-    look: { exposure: 0.95, diffuse: 0.08 },
+    look: { exposure: 0.95, diffuse: 0.25 },
   },
 };
 const VARIANT_KEY = "quadcast-s.variant";
@@ -184,6 +184,8 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
   model.position.set(-center.x, -fitted.min.y, -center.z);
   model.traverse((node) => {
     if (!(node instanceof THREE.Mesh)) return;
+    node.castShadow = true;
+    node.receiveShadow = true;
     if (node.name.toLowerCase().includes("mute_the_microphone")) {
       const createMuteIndicator = () => {
         const material = new THREE.MeshStandardMaterial({
