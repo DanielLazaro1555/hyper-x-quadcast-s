@@ -63,11 +63,11 @@ Descartado: el brillo. El valor por defecto de QuadcastRGB ya es 100 (`MAX_BR_SP
 
 El sensor táctil de silencio genera **[verificado]**:
 
-- En `hidraw` (interfaz 1): un informe de 8 bytes `05 10 XX 00 00 00 00 00`. El byte `XX` alterna entre `00` y `01` con cada toque.
-- El informe de eventos alterna `XX` con cada toque; señala una transición, pero no identifica por sí solo el estado absoluto.
+- En `hidraw` (interfaz 1): un informe de 8 bytes `05 10 XX 00 00 00 00 00`. **`XX` es el estado absoluto: `01` = micrófono activo (LED superior encendido), `00` = silenciado.** Verificado tocando el sensor: secuencia `01`, `00`, `01`, y tras el último el LED quedó encendido.
 - En `/dev/input/event*` ("Consumer Control"): `BTN_0` (código 256), pulsar y soltar.
+- El sensor silencia **por hardware**: no cambia el interruptor ALSA `Mic Capture Switch` **[verificado]**. Son dos mutes independientes (ver más abajo).
 
-Para obtener el estado actual sin esperar un toque, el servicio consulta el informe HID de función `0x07`, comando `0x58`, que reporta mute y patrón polar **[fuente externa; falta confirmarlo con este micrófono]**. La implementación lee el byte 13 para `0951:171f`, según el análisis publicado por [OpenHyperX](https://github.com/chase-irql/OpenHyperX/blob/main/quadcast/hyperx_quadcast.md). Si la consulta no responde, el estado queda desconocido; no se asume que `XX` sea un estado absoluto.
+La consulta HID de función `0x07`, comando `0x58` que describe OpenHyperX **no responde con datos en este micrófono** (`0951:171f`): devuelve `00 00 00 ff 00 …`, sin comando ni ACK **[verificado]**. Por eso el estado inicial es desconocido hasta el primer toque; el servicio muestra «pendiente» y no lo adivina. La consulta se mantiene por si otro firmware sí responde.
 
 HyperX indica que el LED superior encendido significa micrófono activo y apagado significa mute.
 

@@ -88,7 +88,6 @@ fn wait_next_frame(shared: &Shared) {
 fn run(shared: &Shared) {
     let mut mic: Option<Mic> = None;
     let mut muted: Option<bool> = None;
-    let mut last_mute_event: Option<u8> = None;
     let mut next_mute_status = Instant::now();
 
     while shared.running.load(Ordering::SeqCst) {
@@ -100,7 +99,6 @@ fn run(shared: &Shared) {
                 }
                 Err(error) => {
                     muted = None;
-                    last_mute_event = None;
                     set_status(shared, Status {
                         connected: false,
                         error: Some(error),
@@ -126,12 +124,9 @@ fn run(shared: &Shared) {
                     let timeout = if target.is_some() { Duration::from_millis(20) } else { FRAME_INTERVAL };
                     if let Ok(Some(report)) = device.read_report_timeout(timeout) {
                         if let Some(event) = crate::protocol::mute_event_value(&report) {
-                            if last_mute_event.is_some_and(|previous| previous != event) {
-                                if let Some(state) = muted {
-                                    muted = Some(!state);
-                                }
-                            }
-                            last_mute_event = Some(event);
+                            // El evento lleva el estado absoluto: 01 = activo (LED
+                            // encendido), 00 = silenciado. Verificado tocando el sensor.
+                            muted = Some(event == 0);
                             next_mute_status = Instant::now();
                         }
                     }
@@ -152,7 +147,6 @@ fn run(shared: &Shared) {
             Err(error) => {
                 mic = None; // libera las interfaces antes de reintentar
                 muted = None;
-                last_mute_event = None;
                 set_status(shared, Status { connected: false, error: Some(error), rgb: target, muted });
                 thread::sleep(RETRY_INTERVAL);
             }

@@ -28,7 +28,7 @@ pub fn color_packet(rgb: [u8; 3]) -> Packet {
     p
 }
 
-/// Valor alternante del evento del sensor (`05 10 XX ...`), no estado absoluto.
+/// Valor del evento del sensor (`05 10 XX ...`): `01` = activo, `00` = silenciado.
 pub fn mute_event_value(report: &[u8]) -> Option<u8> {
     match report {
         [0x05, 0x10, state, ..] if *state <= 1 => Some(*state),
