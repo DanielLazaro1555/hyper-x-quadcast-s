@@ -2,7 +2,7 @@
 import { getAudioMuted, getStatus, setAudioMuted, setLight, type DeviceStatus } from "./api";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { createStage } from "./scene/stage";
+import { createStage, type Look } from "./scene/stage";
 import { applyBrightness, correctColor, createStore, loadCalibration, saveCalibration, uncorrectColor } from "./state";
 import { theme } from "./theme";
 import { mountMeter } from "./ui/meter";
@@ -46,7 +46,7 @@ interface Finish {
 }
 // Espuma interior: marrón grisáceo mate en ambos modelos.
 const FOAM: Finish = { color: 0x5c4838, metalness: 0, roughness: 1 };
-const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; muteOff: number; exposure: number }> = {
+const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; muteOff: number; look: Look }> = {
   black: {
     label: "Negro",
     parts: {
@@ -56,18 +56,19 @@ const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; mu
       foam: FOAM,
     },
     muteOff: 0x111316,
-    exposure: 1.15,
+    look: { exposure: 1.15, diffuse: 1 },
   },
   white: {
     label: "Blanco",
     parts: {
-      body: { color: 0xeeebe5, metalness: 0.05, roughness: 0.55 },
-      net: { color: 0xd2cec6, metalness: 0.4, roughness: 0.45 },
-      thread: { color: 0xc9c5bd, metalness: 0.05, roughness: 0.6 },
+      body: { color: 0xe4e0d8, metalness: 0.05, roughness: 0.5 },
+      net: { color: 0xaaa69e, metalness: 0.4, roughness: 0.45 },
+      thread: { color: 0xb4b0a8, metalness: 0.05, roughness: 0.6 },
       foam: FOAM,
     },
     muteOff: 0xc4c9d0,
-    exposure: 0.72,
+    // Menos luz difusa y más exposición: las sombras marcan los detalles sin teñir de gris.
+    look: { exposure: 0.95, diffuse: 0.08 },
   },
 };
 const VARIANT_KEY = "quadcast-s.variant";
@@ -88,8 +89,8 @@ function makePart(role: Role): THREE.MeshStandardMaterial {
 }
 function applyVariant(variant: Variant) {
   currentVariant = variant;
-  const { parts, exposure } = VARIANTS[variant];
-  stage.setExposure(exposure);
+  const { parts, look } = VARIANTS[variant];
+  stage.setLook(look);
   partMaterials.forEach(({ material, role }) => {
     const finish = parts[role];
     material.color.setHex(finish.color);

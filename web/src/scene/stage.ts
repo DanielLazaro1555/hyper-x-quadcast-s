@@ -4,10 +4,17 @@ import type { Theme } from "../theme";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+export interface Look {
+  exposure: number;
+  /** Multiplica la luz hemisférica y del entorno: bajarla da sombras que marcan la forma. */
+  diffuse: number;
+}
+
 export interface Stage {
   scene: THREE.Scene;
   start(): void;
-  setExposure(value: number): void;
+  /** Ajusta la luz de la escena: la exposición y cuánta luz difusa (ambiente y entorno) hay. */
+  setLook(look: Look): void;
   setTheme(theme: Theme): void;
 }
 
@@ -44,7 +51,8 @@ export function createStage(container: HTMLElement): Stage {
   controls.maxDistance = 10;
   controls.maxPolarAngle = Math.PI * 0.49;
 
-  scene.add(new THREE.HemisphereLight(0xcbdcff, 0x25212a, 1.05));
+  const hemisphere = new THREE.HemisphereLight(0xcbdcff, 0x25212a, 1.05);
+  scene.add(hemisphere);
   const key = new THREE.DirectionalLight(0xfff1dc, 3.2);
   key.position.set(3, 6, 4);
   scene.add(key);
@@ -83,7 +91,11 @@ export function createStage(container: HTMLElement): Stage {
 
   return {
     scene,
-    setExposure(value) { renderer.toneMappingExposure = value; },
+    setLook({ exposure, diffuse }) {
+      renderer.toneMappingExposure = exposure;
+      hemisphere.intensity = 1.05 * diffuse;
+      scene.environmentIntensity = 0.7 * diffuse;
+    },
     setTheme(theme) {
       const p = PALETTE[theme];
       (scene.background as THREE.Color).setHex(p.background);
