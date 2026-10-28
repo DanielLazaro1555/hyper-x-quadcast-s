@@ -32,6 +32,63 @@ const store = createStore({ color: "#ff0000", brightness: 100, ...loadCalibratio
 const stage = createStage(required("stage"));
 let importedLedMaterials: THREE.MeshBasicMaterial[] = [];
 let importedMuteMaterials: THREE.MeshStandardMaterial[] = [];
+
+// El GLB es un solo modelo negro con un único material; la versión blanca se
+// obtiene repintando las piezas por rol.
+type Variant = "black" | "white";
+type Role = "body" | "net" | "thread";
+interface Finish {
+  color: number;
+  metalness: number;
+  roughness: number;
+}
+const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; muteOff: number }> = {
+  black: {
+    label: "Negro",
+    parts: {
+      body: { color: 0x17191d, metalness: 0.58, roughness: 0.42 },
+      net: { color: 0x0b0c0f, metalness: 0.75, roughness: 0.38 },
+      thread: { color: 0x421c22, metalness: 0.58, roughness: 0.42 },
+    },
+    muteOff: 0x111316,
+  },
+  white: {
+    label: "Blanco",
+    parts: {
+      body: { color: 0xe6e9ed, metalness: 0.2, roughness: 0.5 },
+      net: { color: 0xcdd1d7, metalness: 0.55, roughness: 0.4 },
+      thread: { color: 0x9aa1ab, metalness: 0.2, roughness: 0.55 },
+    },
+    muteOff: 0xc4c9d0,
+  },
+};
+const VARIANT_KEY = "quadcast-s.variant";
+function loadVariant(): Variant {
+  try {
+    const wanted = new URLSearchParams(location.search).get("variant") ?? localStorage.getItem(VARIANT_KEY);
+    return wanted === "white" ? "white" : "black";
+  } catch {
+    return "black";
+  }
+}
+let currentVariant: Variant = loadVariant();
+const partMaterials: { material: THREE.MeshStandardMaterial; role: Role }[] = [];
+function makePart(role: Role): THREE.MeshStandardMaterial {
+  const material = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide });
+  partMaterials.push({ material, role });
+  return material;
+}
+function applyVariant(variant: Variant) {
+  currentVariant = variant;
+  const { parts } = VARIANTS[variant];
+  partMaterials.forEach(({ material, role }) => {
+    const finish = parts[role];
+    material.color.setHex(finish.color);
+    material.metalness = finish.metalness;
+    material.roughness = finish.roughness;
+  });
+  setMuteState(currentMuted);
+}
 let currentRgb = applyBrightness(store.get().color, store.get().brightness);
 let currentMuted: boolean | null = null;
 let audioLevel = 0;
@@ -59,7 +116,7 @@ function setMuteState(muted: boolean | null) {
   currentMuted = state;
   importedMuteMaterials.forEach((material) => {
     const active = state === false;
-    material.color.set(active ? 0xe9edf2 : 0x111316);
+    material.color.set(active ? 0xe9edf2 : VARIANTS[currentVariant].muteOff);
     material.emissive.set(active ? 0xffffff : 0x000000);
     material.emissiveIntensity = active ? 2.3 : 0;
   });
@@ -118,7 +175,7 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
     }
     if (node.name.toLowerCase().includes("net")) {
       // La malla es metal oscuro: la luz del LED se ve a través de sus agujeros.
-      node.material = new THREE.MeshStandardMaterial({ color: 0x0b0c0f, metalness: 0.75, roughness: 0.38, side: THREE.DoubleSide });
+      node.material = makePart("net");
       model.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(node);
       // Justo por fuera de la espuma interior (radio ≈ 0.317) y por dentro de la malla.
@@ -140,16 +197,11 @@ new GLTFLoader().load("/models/quadcast-s.glb", ({ scene: model }) => {
       stage.scene.add(glowMesh);
       return;
     }
-    const original = Array.isArray(node.material) ? node.material : [node.material];
-    const darkParts = original.map(() => new THREE.MeshStandardMaterial({
-      color: node.name.toLowerCase().includes("thread") ? 0x421c22 : 0x17191d,
-      metalness: 0.58,
-      roughness: 0.42,
-      side: THREE.DoubleSide,
-    }));
-    node.material = Array.isArray(node.material) ? darkParts : darkParts[0];
+    const role: Role = node.name.toLowerCase().includes("thread") ? "thread" : "body";
+    node.material = Array.isArray(node.material) ? node.material.map(() => makePart(role)) : makePart(role);
   });
   stage.scene.add(model);
+  applyVariant(currentVariant);
   setImportedLight(currentRgb);
   setMuteState(currentMuted);
 }, undefined, (error) => {
@@ -203,6 +255,23 @@ store.subscribe((s) => {
   // Al micrófono va el color corregido; la vista 3D usa el original.
   push({ color: correctColor(s.color, s), brightness: s.brightness });
 });
+
+const variantButton = required<HTMLButtonElement>("variant");
+function renderVariantButton() {
+  const other: Variant = currentVariant === "black" ? "white" : "black";
+  variantButton.textContent = `Cambiar a ${VARIANTS[other].label.toLowerCase()}`;
+  variantButton.title = `Modelo actual: ${VARIANTS[currentVariant].label}`;
+}
+variantButton.addEventListener("click", () => {
+  applyVariant(currentVariant === "black" ? "white" : "black");
+  try {
+    localStorage.setItem(VARIANT_KEY, currentVariant);
+  } catch {
+    // Sin almacenamiento solo se pierde el recuerdo de la elección.
+  }
+  renderVariantButton();
+});
+renderVariantButton();
 
 const audioButton = required<HTMLButtonElement>("audio-mute");
 let audioMuted: boolean | null = null;
