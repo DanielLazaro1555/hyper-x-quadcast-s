@@ -118,7 +118,7 @@ const importedGlow = new THREE.PointLight(0xffffff, 0, 4.2);
 importedGlow.position.set(0, 2.15, 0.15);
 stage.scene.add(importedGlow);
 // Cuánto blanco se mezcla en el núcleo del LED (0 = color puro, 1 = blanco).
-const HOT_WHITE = 0.2;
+const HOT_WHITE = 0.1;
 function setImportedLight(rgb: [number, number, number]) {
   currentRgb = rgb;
   // El QuadCast apaga toda la iluminación de la cápsula mientras está muteado.
