@@ -43,8 +43,8 @@ interface Finish {
   metalness: number;
   roughness: number;
 }
-// Espuma interior: gris-blanco mate en ambos modelos.
-const FOAM: Finish = { color: 0xb4b2ac, metalness: 0, roughness: 1 };
+// Espuma interior: marrón grisáceo mate en ambos modelos.
+const FOAM: Finish = { color: 0x5c4838, metalness: 0, roughness: 1 };
 const VARIANTS: Record<Variant, { label: string; parts: Record<Role, Finish>; muteOff: number; exposure: number }> = {
   black: {
     label: "Negro",
