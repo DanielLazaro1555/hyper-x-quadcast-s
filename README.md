@@ -47,9 +47,14 @@ Abre <http://127.0.0.1:5173/>. Desde ahí puedes:
 - Elegir el color con el selector o con las muestras (hay una fila de colores mezclados).
 - Bajar el brillo.
 - Calibrar los colores mezclados (ver abajo).
+- Ver el estado del sensor de silencio físico y **silenciar o reactivar el audio** con un botón (ver `docs/PROTOCOL.md`).
+- Cambiar el modelo 3D entre **negro y blanco**.
+- Cambiar entre **modo claro y oscuro**. La elección se recuerda; si no hay ninguna, se sigue la preferencia del sistema.
 - Abrir el medidor de audio.
 
-La vista 3D siempre muestra el color original. Al micrófono llega el color ya corregido por la calibración.
+La vista 3D muestra el color ya corregido por la calibración, el mismo que recibe el micrófono. La web sigue los cambios de color hechos por la API y, al abrirse, recupera el último color usado o el que el micrófono tenía al conectar.
+
+El 3D es una **aproximación**: el brillo se dibuja con una curva para que no se vea apagado, y el modelo blanco es un repintado del modelo negro, porque el archivo solo trae la versión negra. El icono de la pestaña es `web/public/favicon.svg` (diseño propio: la cápsula con la rejilla y el degradado RGB sobre un fondo oscuro, legible en pestañas claras y oscuras).
 
 ### Calibración
 
@@ -127,12 +132,16 @@ No ejecutes a la vez `serve`, `color` o `quadcastrgb`: todos reclaman las mismas
 ```
 src/protocol.rs   paquetes del micrófono y brillo (con pruebas contra la captura real)
 src/device.rs     acceso USB
-src/light.rs      hilo que mantiene el color reenviándolo
+src/light.rs      hilo que mantiene el color reenviándolo y lee el sensor de silencio
+src/audio.rs      mute de audio por el control ALSA del kernel
 src/server.rs     API local
 src/main.rs       línea de comandos
 web/src/state.ts            estado y cálculo de color y calibración
 web/src/api.ts              cliente del servicio local
 web/src/scene/              escena 3D (Three.js)
+web/src/theme.ts            tema claro/oscuro
+web/public/favicon.svg      icono de la pestaña
+contrib/                    regla udev para el RGB y el sensor
 web/src/audio/meter.ts      captura y análisis del audio
 web/src/ui/                 panel de controles y medidor
 docs/PROTOCOL.md  protocolo y resultados de la ingeniería inversa
