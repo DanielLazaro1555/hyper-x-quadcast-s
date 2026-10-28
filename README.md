@@ -178,6 +178,8 @@ Ver la lista de [`docs/PROTOCOL.md`](docs/PROTOCOL.md#pendiente). Además:
 
 - [QuadcastRGB](https://github.com/Ors1mer/QuadcastRGB), de Ors1mer (GPL-2.0), fue la fuente principal para conocer el protocolo del RGB. Este proyecto no copia su código: es una reimplementación en Rust, y los paquetes se contrastaron con una captura `usbmon` propia.
 - [REA](https://github.com/morluto/rea), de morluto, se probó como herramienta de ingeniería inversa.
+- Modelo 3D: "Microphone HyperX QuadCast S" (<https://skfb.ly/o8rYZ>) de Sterflycreator, con licencia [Creative Commons Attribution 4.0](http://creativecommons.org/licenses/by/4.0/) (CC BY 4.0). La licencia se aplica solo al archivo 3D (`web/public/models/quadcast-s.glb`); el código mantiene la licencia GPL-2.0-or-later. El modelo blanco es un repintado propio del mismo archivo. Más detalles en [`docs/ASSET-CREDITS.md`](docs/ASSET-CREDITS.md).
+- [OpenHyperX](https://github.com/chase-irql/OpenHyperX), de chase-irql, como referencia externa del protocolo HID; lo que no se pudo confirmar con este micrófono está marcado en `docs/PROTOCOL.md`.
 
 ## Licencia
 
