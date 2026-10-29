@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-//! Mute de captura del QuadCast S a través del control ALSA del kernel.
+//! Linux: mute y mezclador del QuadCast S a través de los controles ALSA del kernel.
 //!
 //! El audio es un dispositivo USB aparte del RGB (`0951:171d`) y `snd-usb-audio`
 //! es dueño de sus interfaces: una petición USB directa al Feature Unit la rechaza
@@ -11,7 +11,7 @@
 use std::fs::{self, File, OpenOptions};
 use std::path::Path;
 
-use serde::Serialize;
+use super::{AudioInfo, ControlState, StreamFormat, UsbDevice};
 use std::os::fd::AsRawFd;
 
 const VID: &str = "0951";
@@ -133,18 +133,6 @@ const CONTROLS: [ControlSpec; 6] = [
     ControlSpec { id: "headphone_switch", name: "Speaker Playback Switch", kind: "switch", channels: 1, min: 0, max: 1, db_min: 0 },
 ];
 
-#[derive(Serialize)]
-pub struct ControlState {
-    id: &'static str,
-    name: &'static str,
-    kind: &'static str,
-    values: Vec<i64>,
-    min: i64,
-    max: i64,
-    /// Decibelios del valor mínimo; cada paso suma 1 dB. Solo en los volúmenes.
-    db_min: Option<i64>,
-}
-
 /// Estado actual de todos los controles del mezclador del micrófono.
 pub fn mixer() -> Result<Vec<ControlState>, String> {
     let file = open_control()?;
@@ -180,16 +168,6 @@ pub fn set_control(id: &str, value: i64) -> Result<(), String> {
     ioctl(&file, SNDRV_CTL_IOCTL_ELEM_WRITE, &mut elem, spec.name)
 }
 
-/// Formato de un sentido (`Capture` o `Playback`) tal como lo declara el micrófono por USB y
-/// lo resume el kernel en `/proc/asound/cardN/stream0`.
-#[derive(Serialize, Default)]
-pub struct StreamFormat {
-    format: String,
-    channels: u32,
-    bits: u32,
-    rates: Vec<u32>,
-}
-
 fn parse_stream(text: &str, section: &str) -> Option<StreamFormat> {
     let mut lines = text.lines().skip_while(|l| l.trim() != format!("{section}:"));
     lines.next()?;
@@ -210,16 +188,6 @@ fn parse_stream(text: &str, section: &str) -> Option<StreamFormat> {
         }
     }
     (f.channels > 0).then_some(f)
-}
-
-#[derive(Serialize)]
-pub struct UsbDevice {
-    id: String,
-    product: String,
-    manufacturer: String,
-    version: String,
-    speed_mbps: String,
-    role: &'static str,
 }
 
 fn read_trim(path: &Path) -> String {
@@ -252,15 +220,6 @@ pub fn usb_devices() -> Vec<UsbDevice> {
     }
     found.sort_by(|a, b| a.id.cmp(&b.id));
     found
-}
-
-#[derive(Serialize)]
-pub struct AudioInfo {
-    card: Option<u32>,
-    capture: Option<StreamFormat>,
-    playback: Option<StreamFormat>,
-    controls: Vec<ControlState>,
-    usb: Vec<UsbDevice>,
 }
 
 pub fn info() -> AudioInfo {

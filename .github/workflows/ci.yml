@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Dependencias de Linux
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev pkg-config
+      - name: Web
+        run: |
+          npm --prefix web install
+          npm --prefix web run build
+      - name: Compilar
+        run: cargo build --release
+      - name: Pruebas
+        run: cargo test
+      - name: Binario
+        uses: actions/upload-artifact@v4
+        with:
+          name: quadcast-s-${{ runner.os }}
+          path: |
+            target/release/quadcast-s
+            target/release/quadcast-s.exe
+          if-no-files-found: ignore

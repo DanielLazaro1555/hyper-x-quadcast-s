@@ -15,12 +15,22 @@ pub struct Saved {
     pub rgb: [u8; 3],
 }
 
-fn path() -> Option<PathBuf> {
+#[cfg(windows)]
+fn config_dir() -> Option<PathBuf> {
+    std::env::var_os("APPDATA").map(PathBuf::from)
+}
+
+#[cfg(not(windows))]
+fn config_dir() -> Option<PathBuf> {
     let base = std::env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
         .filter(|p| p.is_absolute())
         .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))?;
-    Some(base.join("quadcast-s").join("state.json"))
+    Some(base)
+}
+
+fn path() -> Option<PathBuf> {
+    Some(config_dir()?.join("quadcast-s").join("state.json"))
 }
 
 pub fn load() -> Option<Saved> {
@@ -48,6 +58,7 @@ mod tests {
     fn guarda_y_recupera() {
         let dir = std::env::temp_dir().join(format!("quadcast-state-{}", std::process::id()));
         std::env::set_var("XDG_CONFIG_HOME", &dir);
+        std::env::set_var("APPDATA", &dir);
         assert!(load().is_none());
         save(&Saved {
             ui: UiColor { color: "#ff8800".into(), brightness: 70, corrected: false },

@@ -33,6 +33,9 @@ pub struct Mic {
 impl Mic {
     pub fn open() -> Result<Self, String> {
         let handle = rusb::open_device_with_vid_pid(VID, PID).ok_or_else(not_found)?;
+        // Solo Linux tiene que apartar a `usbhid`; en Windows la interfaz debe tener
+        // el driver WinUSB (ver docs/WINDOWS.md).
+        #[cfg(target_os = "linux")]
         handle.set_auto_detach_kernel_driver(true).map_err(|e| {
             format!("no se pudo activar la desconexión automática del controlador: {e}")
         })?;
