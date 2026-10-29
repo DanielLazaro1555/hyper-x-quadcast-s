@@ -7,7 +7,6 @@
 //! ni los auriculares como hace ALSA, así que aquí solo están el volumen de captura y el
 //! silencio.
 
-use windows::core::Interface;
 use windows::Win32::Devices::FunctionDiscovery::PKEY_Device_FriendlyName;
 use windows::Win32::Media::Audio::Endpoints::IAudioEndpointVolume;
 use windows::Win32::Media::Audio::{
