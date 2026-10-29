@@ -22,9 +22,10 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev pkg-config
       - name: Web
+        working-directory: web
         run: |
-          npm --prefix web install
-          npm --prefix web run build
+          npm install
+          npm run build
       - name: Compilar
         run: cargo build --release
       - name: Pruebas
