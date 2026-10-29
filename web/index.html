@@ -29,6 +29,7 @@
         --btn-text: #334155;
         --btn-hover: #f1f5f9;
         --ok-bg: #f0fdf4; --ok-line: #bbf7d0; --ok-text: #166534; --ok-dot: #22c55e;
+        --warn-bg: #fffbeb; --warn-line: #fde68a; --warn-text: #92400e;
         --bad-bg: #fef2f2; --bad-line: #fecaca; --bad-text: #b91c1c; --bad-dot: #ef4444;
         --shadow: rgba(15,23,42,.04);
       }
@@ -55,6 +56,7 @@
         --btn-text: #e2e8f0;
         --btn-hover: #243049;
         --ok-bg: #0f2a1d; --ok-line: #166534; --ok-text: #86efac; --ok-dot: #22c55e;
+        --warn-bg: #2b2210; --warn-line: #854d0e; --warn-text: #fcd34d;
         --bad-bg: #2d1416; --bad-line: #7f1d1d; --bad-text: #fca5a5; --bad-dot: #ef4444;
         --shadow: rgba(0,0,0,.35);
       }
@@ -74,6 +76,11 @@
       .stage-caption p { margin:0; color:var(--muted); font-size:11px; }
       .stage-caption a { color:var(--heading); text-decoration:underline; text-underline-offset:2px; pointer-events:auto; }
       .caption-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; max-width:340px; }
+      #preview-banner { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); z-index:2;
+        width:min(560px, calc(100% - 32px)); padding:11px 14px; border:1px solid var(--warn-line);
+        border-radius:12px; background:var(--warn-bg); color:var(--warn-text); font-size:13px; line-height:1.45;
+        text-align:center; }
+      #preview-banner[hidden] { display:none; }
       .mute-status { display:inline-flex; align-items:center; gap:7px; padding:5px 9px;
         border:1px solid var(--chip-line); border-radius:999px; background:var(--chip-bg); color:var(--chip-text);
         font-size:11px; font-weight:600; }
@@ -120,6 +127,7 @@
     <div id="app">
       <div id="stage">
         <div class="stage-caption"><div class="eyebrow">Estudio · Vista 3D</div><h2>HyperX QuadCast S</h2><p><a href="https://skfb.ly/o8rYZ" target="_blank" rel="noreferrer">“Microphone HyperX QuadCast S”</a> by Sterflycreator · <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a></p><p>Arrastra para girar</p><div class="caption-actions"><div id="mute-status" class="mute-status" data-state="unknown" role="status" aria-live="polite">Mute sin sincronizar</div><button id="audio-mute" class="mute-toggle" type="button" disabled>Silenciar audio</button><button id="variant" class="mute-toggle" type="button">Modelo</button><button id="theme" class="mute-toggle" type="button">Tema</button></div></div>
+        <div id="preview-banner" role="status" aria-live="polite" hidden></div>
       </div>
       <aside id="panel">
         <nav id="tabs" role="tablist" aria-label="Secciones del panel">

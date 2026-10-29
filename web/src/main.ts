@@ -452,6 +452,14 @@ function syncColor(status: DeviceStatus) {
 // software, así que se refresca el botón sin esperar al siguiente sondeo de audio.
 let lastHardwareMuted: boolean | null = null;
 
+const previewBanner = required("preview-banner");
+
+/** Avisa de que lo que se ve es solo una vista previa cuando no hay micrófono real detrás. */
+function showPreview(reason: string | null) {
+  previewBanner.hidden = reason === null;
+  if (reason !== null) previewBanner.textContent = reason;
+}
+
 async function poll() {
   try {
     const status = await getStatus();
@@ -462,7 +470,15 @@ async function poll() {
     }
     panel.setStatus(describe(status));
     setMuteState(status.muted);
+    showPreview(
+      status.connected
+        ? null
+        : "Vista previa: no se detecta ningún micrófono conectado. Lo que cambies aquí es solo una simulación en pantalla y no afecta a ningún micrófono real.",
+    );
   } catch {
+    showPreview(
+      "Vista previa: no hay conexión con el servicio local, así que no se controla ningún micrófono. Lo que cambies aquí es solo una simulación en pantalla.",
+    );
     panel.setStatus("Sin conexión con el servicio local. Ejecútalo con: quadcast-s serve");
   }
 }
