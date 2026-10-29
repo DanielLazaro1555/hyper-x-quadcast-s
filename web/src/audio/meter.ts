@@ -50,8 +50,16 @@ export async function listInputs(): Promise<MediaDeviceInfo[]> {
   return all.filter((d) => d.kind === "audioinput" && d.deviceId !== "");
 }
 
-export function preferredInput(devices: MediaDeviceInfo[]): string | undefined {
-  return devices.find((d) => /quadcast/i.test(d.label))?.deviceId;
+/** Solo el QuadCast S: se descartan otras entradas y los "Monitor of ..." de salidas. */
+export function quadcastInputs(devices: MediaDeviceInfo[]): MediaDeviceInfo[] {
+  return devices.filter(
+    (d) =>
+      /quadcast/i.test(d.label) &&
+      !/^monitor of/i.test(d.label) &&
+      // Chrome repite el dispositivo predeterminado con estos identificadores.
+      d.deviceId !== "default" &&
+      d.deviceId !== "communications",
+  );
 }
 
 export function describeError(e: unknown): string {

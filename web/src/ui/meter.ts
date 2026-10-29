@@ -3,7 +3,7 @@ import {
   MIN_DB,
   describeError,
   listInputs,
-  preferredInput,
+  quadcastInputs,
   startMeter,
   unlockLabels,
   type InputInfo,
@@ -166,13 +166,17 @@ export function mountMeter(root: HTMLElement, onAudioLevel: (level: number, acti
     try {
       if (!deviceId) {
         await unlockLabels();
-        const devices = await listInputs();
+        const devices = quadcastInputs(await listInputs());
+        if (devices.length === 0) {
+          throw new Error("No se encontró el HyperX QuadCast S. Conéctalo y permite el micrófono en el navegador.");
+        }
         select.replaceChildren(
-          ...devices.map((d) => Object.assign(document.createElement("option"), { value: d.deviceId, textContent: d.label || d.deviceId })),
+          ...devices.map((d) => Object.assign(document.createElement("option"), { value: d.deviceId, textContent: d.label })),
         );
-        select.hidden = false;
-        deviceId = preferredInput(devices) ?? devices[0]?.deviceId;
-        if (deviceId) select.value = deviceId;
+        // Con una sola entrada no hay nada que elegir.
+        select.hidden = devices.length < 2;
+        deviceId = devices[0].deviceId;
+        select.value = deviceId;
       }
       history = [];
       smoothedLevel = 0;
