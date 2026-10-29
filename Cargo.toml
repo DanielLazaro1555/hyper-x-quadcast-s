@@ -1,6 +1,6 @@
 [package]
 name = "quadcast-s"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Control del HyperX QuadCast S en Linux (RGB y eventos de silencio)"
 license = "GPL-2.0-or-later"
