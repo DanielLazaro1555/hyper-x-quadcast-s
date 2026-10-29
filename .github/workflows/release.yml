@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Al subir una etiqueta v* (por ejemplo v0.2.0) compila los paquetes y crea la Release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: sudo apt-get update && sudo apt-get install -y libusb-1.0-0-dev pkg-config
+      - name: Web
+        working-directory: web
+        run: |
+          npm install
+          npm run build
+      - run: cargo build --release
+      - run: cargo install cargo-deb cargo-generate-rpm
+      - run: cargo deb --no-build
+      - run: cargo generate-rpm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            target/debian/*.deb
+            target/generate-rpm/*.rpm
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Web
+        working-directory: web
+        run: |
+          npm install
+          npm run build
+      - run: cargo build --release
+      - name: Empaquetar
+        shell: bash
+        run: |
+          name="quadcast-s-${GITHUB_REF_NAME}-windows-x64"
+          mkdir "$name"
+          cp target/release/quadcast-s.exe README.md docs/WINDOWS.md "$name/"
+          7z a "$name.zip" "$name"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: quadcast-s-*.zip
+
+  publish:
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
