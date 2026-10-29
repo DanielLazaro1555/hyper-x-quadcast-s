@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=HyperX QuadCast S: API local e interfaz web
+Documentation=https://github.com/DanielLazaro1555/hyper-x-quadcast-s
+
+[Service]
+ExecStart=/usr/bin/quadcast-s serve
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

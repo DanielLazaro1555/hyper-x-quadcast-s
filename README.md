@@ -37,7 +37,18 @@ Compila la web y el binario, instala `quadcast-s` en `~/.local/bin`, activa el s
 
 Para quitarlo: `./install.sh --uninstall`. Ver el estado del servicio: `systemctl --user status quadcast-s`.
 
-Windows y los paquetes `.deb`/`.rpm` todavía no existen: el mute por software usa ALSA y el acceso USB necesita otro driver en Windows.
+### Paquetes .deb y .rpm
+
+```
+cargo install cargo-deb cargo-generate-rpm
+./contrib/build-packages.sh
+sudo dnf install target/generate-rpm/*.rpm      # Fedora
+sudo apt install ./target/debian/*.deb          # Debian, Ubuntu
+```
+
+El paquete instala el binario en `/usr/bin`, la regla udev y el servicio de usuario. Después, cada persona lo activa con `systemctl --user enable --now quadcast-s`. Solo se ha comprobado que los paquetes se generan con el contenido correcto; la instalación del `.deb` no se ha probado.
+
+Windows todavía no existe: el mute por software usa ALSA y el acceso USB necesita otro driver en Windows.
 
 ## Uso rápido: la interfaz web (desarrollo)
 
